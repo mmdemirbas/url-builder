@@ -11,13 +11,9 @@ class URLEncoderBenchmark {
 
     @Benchmark
     @Throws(CharacterCodingException::class, UnsupportedEncodingException::class)
-    fun testUrlEncodeSmall(): String {
-        return URLEncoder.encode(SMALL_STRING_MIX, "UTF-8")
-    }
+    fun testUrlEncodeSmall() = URLEncoder.encode(SMALL_STRING_MIX, "UTF-8")!!
 
     @Benchmark
     @Throws(CharacterCodingException::class, UnsupportedEncodingException::class)
-    fun testUrlEncodeLarge(): String {
-        return URLEncoder.encode(LARGE_STRING_MIX, "UTF-8")
-    }
+    fun testUrlEncodeLarge() = URLEncoder.encode(LARGE_STRING_MIX, "UTF-8")!!
 }

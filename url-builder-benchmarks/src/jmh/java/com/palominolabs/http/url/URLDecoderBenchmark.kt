@@ -8,16 +8,11 @@ import java.net.URLDecoder
 import java.nio.charset.CharacterCodingException
 
 class URLDecoderBenchmark {
+    @Benchmark
+    @Throws(CharacterCodingException::class, UnsupportedEncodingException::class)
+    fun testUrlDecodeSmall() = URLDecoder.decode(SMALL_STRING_ENCODED, "UTF-8")!!
 
     @Benchmark
     @Throws(CharacterCodingException::class, UnsupportedEncodingException::class)
-    fun testUrlDecodeSmall(): String {
-        return URLDecoder.decode(SMALL_STRING_ENCODED, "UTF-8")
-    }
-
-    @Benchmark
-    @Throws(CharacterCodingException::class, UnsupportedEncodingException::class)
-    fun testUrlDecodeLarge(): String {
-        return URLDecoder.decode(LARGE_STRING_ENCODED, "UTF-8")
-    }
+    fun testUrlDecodeLarge() = URLDecoder.decode(LARGE_STRING_ENCODED, "UTF-8")!!
 }

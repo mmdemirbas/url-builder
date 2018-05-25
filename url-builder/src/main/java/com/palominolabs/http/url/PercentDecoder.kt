@@ -1,5 +1,6 @@
 package com.palominolabs.http.url
 
+import com.palominolabs.http.url.PercentEncoders.throwIfError
 import java.nio.ByteBuffer
 import java.nio.CharBuffer
 import java.nio.charset.CharsetDecoder
@@ -17,7 +18,7 @@ import java.nio.charset.UnmappableCharacterException
  * @param decodedCharBufSize        Size of buffer that encoded bytes are decoded into
  */
 @NotThreadSafe
-class PercentDecoder(private val decoder: CharsetDecoder,
+class PercentDecoder(private val charsetDecoder: CharsetDecoder,
                      initialEncodedByteBufSize: Int = 16,
                      decodedCharBufSize: Int = 16) {
     /**
@@ -49,28 +50,25 @@ class PercentDecoder(private val decoder: CharsetDecoder,
         // this is almost always an underestimate of the size needed:
         // only a 4-byte encoding (which is 12 characters input) would case this to be an overestimate
         outputBuf.ensureCapacity(input.length / 8)
-        encodedBuf!!.clear()
+        encodedBuf.clear()
 
         var i = 0
         while (i < input.length) {
             val c = input[i]
             if (c != '%') {
                 handleEncodedBytes()
-
                 outputBuf.append(c)
                 i++
                 continue
             }
 
-            if (i + 2 >= input.length) {
-                throw IllegalArgumentException("Could not percent decode <$input>: incomplete %-pair at position $i")
-            }
+            if (i + 2 >= input.length) throw IllegalArgumentException("Could not percent decode <$input>: incomplete %-pair at position $i")
 
             // grow the byte buf if needed
-            if (encodedBuf!!.remaining() == 0) {
-                val largerBuf = ByteBuffer.allocate(encodedBuf!!.capacity() * 2)
-                encodedBuf!!.flip()
-                largerBuf.put(encodedBuf!!)
+            if (encodedBuf.remaining() == 0) {
+                val largerBuf = ByteBuffer.allocate(encodedBuf.capacity() * 2)
+                encodedBuf.flip()
+                largerBuf.put(encodedBuf)
                 encodedBuf = largerBuf
             }
 
@@ -78,15 +76,14 @@ class PercentDecoder(private val decoder: CharsetDecoder,
             var msBits = Character.digit(input[++i], 16)
             val lsBits = Character.digit(input[++i], 16)
 
-            if (msBits == -1 || lsBits == -1) {
-                throw IllegalArgumentException("Invalid %-tuple <" + input.subSequence(i - 2, i + 1) + ">")
-            }
+            if (msBits == -1 || lsBits == -1) throw IllegalArgumentException("Invalid %-tuple <" + input.subSequence(i - 2,
+                                                                                                                     i + 1) + ">")
 
             msBits = msBits shl 4
             msBits = msBits or lsBits
 
             // msBits can only have 8 bits set, so cast is safe
-            encodedBuf!!.put(msBits.toByte())
+            encodedBuf.put(msBits.toByte())
             i++
         }
 
@@ -100,43 +97,40 @@ class PercentDecoder(private val decoder: CharsetDecoder,
      */
     @Throws(MalformedInputException::class, UnmappableCharacterException::class)
     private fun handleEncodedBytes() {
-        if (encodedBuf!!.position() == 0) {
-            // nothing to do
-            return
-        }
+        // nothing to do
+        if (encodedBuf.position() == 0) return
 
-        decoder.reset()
+        charsetDecoder.reset()
         var coderResult: CoderResult
 
         // switch to reading mode
-        encodedBuf!!.flip()
+        encodedBuf.flip()
 
         // loop while we're filling up the decoded char buf, or there's any encoded bytes
         // decode() in practice seems to only consume bytes when it can decode an entire char...
         do {
             decodedCharBuf.clear()
-            coderResult = decoder.decode(encodedBuf, decodedCharBuf, false)
-            throwIfError(coderResult)
+            coderResult = charsetDecoder.decode(encodedBuf, decodedCharBuf, false)
+            coderResult.throwIfError(true)
             appendDecodedChars()
-        } while (coderResult === OVERFLOW && encodedBuf!!.hasRemaining())
+        } while (coderResult === OVERFLOW && encodedBuf.hasRemaining())
 
         // final decode with end-of-input flag
         decodedCharBuf.clear()
-        coderResult = decoder.decode(encodedBuf, decodedCharBuf, true)
-        throwIfError(coderResult)
+        coderResult = charsetDecoder.decode(encodedBuf, decodedCharBuf, true)
+        coderResult.throwIfError(true)
 
-        if (encodedBuf!!.hasRemaining()) {
-            throw IllegalStateException("Final decode didn't error, but didn't consume remaining input bytes")
+        when {
+            encodedBuf.hasRemaining() -> throw IllegalStateException("Final decode didn't error, but didn't consume remaining input bytes")
+            coderResult !== UNDERFLOW -> throw IllegalStateException("Expected underflow, but instead final decode returned $coderResult")
+            else                      -> {
+                appendDecodedChars()
+
+                // we've finished the input, wrap it up
+                encodedBuf.clear()
+                flush()
+            }
         }
-        if (coderResult !== UNDERFLOW) {
-            throw IllegalStateException("Expected underflow, but instead final decode returned $coderResult")
-        }
-
-        appendDecodedChars()
-
-        // we've finished the input, wrap it up
-        encodedBuf!!.clear()
-        flush()
     }
 
     /**
@@ -144,35 +138,13 @@ class PercentDecoder(private val decoder: CharsetDecoder,
      */
     @Throws(MalformedInputException::class, UnmappableCharacterException::class)
     private fun flush() {
-        val coderResult: CoderResult
         decodedCharBuf.clear()
 
-        coderResult = decoder.flush(decodedCharBuf)
+        val coderResult = charsetDecoder.flush(decodedCharBuf)
         appendDecodedChars()
 
-        throwIfError(coderResult)
-
-        if (coderResult !== UNDERFLOW) {
-            throw IllegalStateException("Decoder flush resulted in $coderResult")
-        }
-    }
-
-    /**
-     * If coderResult is considered an error (i.e. not overflow or underflow), throw the corresponding
-     * CharacterCodingException.
-     *
-     * @param coderResult result to check
-     * @throws MalformedInputException      if result represents malformed input
-     * @throws UnmappableCharacterException if result represents an unmappable character
-     */
-    @Throws(MalformedInputException::class, UnmappableCharacterException::class)
-    private fun throwIfError(coderResult: CoderResult) {
-        if (coderResult.isMalformed) {
-            throw MalformedInputException(coderResult.length())
-        }
-        if (coderResult.isUnmappable) {
-            throw UnmappableCharacterException(coderResult.length())
-        }
+        coderResult.throwIfError(true)
+        if (coderResult !== UNDERFLOW) throw IllegalStateException("Decoder flush resulted in $coderResult")
     }
 
     /**

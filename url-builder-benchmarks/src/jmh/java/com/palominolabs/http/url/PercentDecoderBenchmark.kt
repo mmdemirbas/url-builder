@@ -9,7 +9,6 @@ import java.nio.charset.CharacterCodingException
 import java.nio.charset.StandardCharsets
 
 class PercentDecoderBenchmark {
-
     @State(Scope.Thread)
     class ThreadState {
         internal var decoder = PercentDecoder(StandardCharsets.UTF_8.newDecoder())
@@ -17,34 +16,20 @@ class PercentDecoderBenchmark {
 
     @Benchmark
     @Throws(CharacterCodingException::class)
-    fun testPercentDecodeSmall(state: ThreadState): String {
-        return state.decoder.decode(SMALL_STRING_ENCODED)
-    }
+    fun testPercentDecodeSmall(state: ThreadState) = state.decoder.decode(SMALL_STRING_ENCODED)
 
     @Benchmark
     @Throws(CharacterCodingException::class)
-    fun testPercentDecodeLarge(state: ThreadState): String {
-        return state.decoder.decode(LARGE_STRING_ENCODED)
-    }
+    fun testPercentDecodeLarge(state: ThreadState) = state.decoder.decode(LARGE_STRING_ENCODED)
 
     companion object {
-
         internal val SMALL_STRING_ENCODED: String
         internal val LARGE_STRING_ENCODED: String
 
         init {
-            val encoder = UrlPercentEncoders.unstructuredQueryEncoder
-            try {
-                SMALL_STRING_ENCODED = encoder.encode(SMALL_STRING_MIX)
-            } catch (e: CharacterCodingException) {
-                throw RuntimeException(e)
-            }
-
-            try {
-                LARGE_STRING_ENCODED = encoder.encode(LARGE_STRING_MIX)
-            } catch (e: CharacterCodingException) {
-                throw RuntimeException(e)
-            }
+            val encoder = PercentEncoders.newUnstructuredQueryEncoder()
+            SMALL_STRING_ENCODED = encoder.encode(SMALL_STRING_MIX)
+            LARGE_STRING_ENCODED = encoder.encode(LARGE_STRING_MIX)
         }
     }
 }
