@@ -1,39 +1,43 @@
 buildscript {
-  repositories {
-    jcenter()
-  }
-  dependencies {
-    classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.3.1'
-  }
+    ext.kotlin_version = '1.2.41'
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.3.1'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
 }
 
 apply plugin: 'groovy'
+apply plugin: 'kotlin'
 apply plugin: 'findbugs'
 apply plugin: 'com.jfrog.bintray'
 apply plugin: 'maven-publish'
 
 dependencies {
-  compile 'com.google.code.findbugs:jsr305:3.0.0'
-  compile 'com.google.guava:guava:18.0'
-  compile 'org.apache.commons:commons-lang3:3.4'
+    compile 'com.google.code.findbugs:jsr305:3.0.0'
+    compile 'com.google.guava:guava:18.0'
+    compile 'org.apache.commons:commons-lang3:3.4'
 
-  compile "org.slf4j:slf4j-api:$depVersions.slf4j"
-  testRuntime "org.slf4j:slf4j-simple:$depVersions.slf4j"
-  testRuntime "org.slf4j:log4j-over-slf4j:$depVersions.slf4j"
-  testRuntime "org.slf4j:jcl-over-slf4j:$depVersions.slf4j"
-  testCompile "org.slf4j:jul-to-slf4j:$depVersions.slf4j"
+    compile "org.slf4j:slf4j-api:$depVersions.slf4j"
+    testRuntime "org.slf4j:slf4j-simple:$depVersions.slf4j"
+    testRuntime "org.slf4j:log4j-over-slf4j:$depVersions.slf4j"
+    testRuntime "org.slf4j:jcl-over-slf4j:$depVersions.slf4j"
+    testCompile "org.slf4j:jul-to-slf4j:$depVersions.slf4j"
 
-  testCompile 'junit:junit:4.12'
+    testCompile 'junit:junit:4.12'
 
-  testCompile 'org.codehaus.groovy:groovy-all:2.4.4'
+    testCompile 'org.codehaus.groovy:groovy-all:2.4.4'
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 }
 
 task sourceJar(type: Jar, dependsOn: classes) {
-  from sourceSets.main.allJava
+    from sourceSets.main.allJava
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-  from javadoc.destinationDir
+    from javadoc.destinationDir
 }
 
 
@@ -43,53 +47,66 @@ ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
 
 // build a pom
 publishing {
-  publications {
-    bintray(MavenPublication) {
-      from components.java
-      groupId project.group
-      artifactId project.name
-      version project.version
+    publications {
+        bintray(MavenPublication) {
+            from components.java
+            groupId project.group
+            artifactId project.name
+            version project.version
 
-      artifact sourceJar {
-        classifier 'sources'
-      }
+            artifact sourceJar {
+                classifier 'sources'
+            }
 
-      artifact javadocJar {
-        classifier 'javadoc'
-      }
+            artifact javadocJar {
+                classifier 'javadoc'
+            }
+        }
     }
-  }
 }
 
 bintray {
-  user = rootProject.hasProperty('bintrayUser') ? rootProject.property('bintrayUser') : 'FIXME'
-  key = rootProject.hasProperty('bintrayApiKey') ? rootProject.property('bintrayApiKey') : 'FIXME'
-  publications = ['bintray']
+    user = rootProject.hasProperty('bintrayUser') ? rootProject.property('bintrayUser') : 'FIXME'
+    key = rootProject.hasProperty('bintrayApiKey') ? rootProject.property('bintrayApiKey') : 'FIXME'
+    publications = ['bintray']
 
-  pkg {
-    repo = 'maven'
-    licenses = ['Copyfree']
-    vcsUrl = 'https://github.com/palominolabs/url-builder'
-    name = 'com.palominolabs.http:url-builder'
+    pkg {
+        repo = 'maven'
+        licenses = ['Copyfree']
+        vcsUrl = 'https://github.com/palominolabs/url-builder'
+        name = 'com.palominolabs.http:url-builder'
 
-    version {
-      name = project.version
-      released = new Date()
-      if (project.isReleaseVersion) {
-        vcsTag = 'v' + project.version
-      }
+        version {
+            name = project.version
+            released = new Date()
+            if (project.isReleaseVersion) {
+                vcsTag = 'v' + project.version
+            }
+        }
     }
-  }
 }
 
 findbugs {
-  toolVersion = '3.0.1'
-  // don't findbugs the tests
-  sourceSets = [sourceSets.main]
+    toolVersion = '3.0.1'
+    // don't findbugs the tests
+    sourceSets = [sourceSets.main]
 }
 tasks.withType(FindBugs) {
-  reports {
-    xml.enabled = false
-    html.enabled = true
-  }
+    reports {
+        xml.enabled = false
+        html.enabled = true
+    }
+}
+repositories {
+    mavenCentral()
+}
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
 }
