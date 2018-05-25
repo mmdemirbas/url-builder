@@ -4,18 +4,16 @@
 
 package com.palominolabs.http.url
 
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-
 import java.nio.charset.CharacterCodingException
+import java.nio.charset.CodingErrorAction.REPLACE
 import java.nio.charset.MalformedInputException
 import java.nio.charset.UnmappableCharacterException
-import java.util.BitSet
-
-import com.google.common.base.Charsets.UTF_16BE
-import com.google.common.base.Charsets.UTF_8
-import java.nio.charset.CodingErrorAction.REPLACE
-import org.junit.Assert.assertEquals
+import java.util.*
+import kotlin.text.Charsets.UTF_16BE
+import kotlin.text.Charsets.UTF_8
 
 class PercentEncoderTest {
 

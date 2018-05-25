@@ -1,7 +1,5 @@
 package com.palominolabs.http.url
 
-import javax.annotation.concurrent.NotThreadSafe
-
 /**
  * A PercentEncoderHandler implementation that accumulates chars in a buffer.
  */

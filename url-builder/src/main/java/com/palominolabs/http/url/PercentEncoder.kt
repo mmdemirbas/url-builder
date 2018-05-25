@@ -13,7 +13,6 @@ import java.nio.charset.CoderResult
 import java.nio.charset.MalformedInputException
 import java.nio.charset.UnmappableCharacterException
 import java.util.*
-import javax.annotation.concurrent.NotThreadSafe
 
 /**
  * Encodes unsafe characters as a sequence of %XX hex-encoded bytes.
@@ -105,7 +104,7 @@ class PercentEncoder
      * @throws UnmappableCharacterException if encoder is configured to report errors and an unmappable character is
      * detected
      */
-//    @Throws(MalformedInputException::class, UnmappableCharacterException::class)
+    @Throws(MalformedInputException::class, UnmappableCharacterException::class)
     fun encode(input: CharSequence): String {
         stringHandler.reset()
         stringHandler.ensureCapacity(input.length)

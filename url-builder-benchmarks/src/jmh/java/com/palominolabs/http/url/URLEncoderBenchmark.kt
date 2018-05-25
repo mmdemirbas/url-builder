@@ -1,13 +1,11 @@
 package com.palominolabs.http.url
 
+import com.palominolabs.http.url.PercentEncoderBenchmark.Companion.LARGE_STRING_MIX
+import com.palominolabs.http.url.PercentEncoderBenchmark.Companion.SMALL_STRING_MIX
 import org.openjdk.jmh.annotations.Benchmark
-
 import java.io.UnsupportedEncodingException
 import java.net.URLEncoder
 import java.nio.charset.CharacterCodingException
-
-import com.palominolabs.http.url.PercentEncoderBenchmark.Companion.LARGE_STRING_MIX
-import com.palominolabs.http.url.PercentEncoderBenchmark.Companion.SMALL_STRING_MIX
 
 class URLEncoderBenchmark {
 

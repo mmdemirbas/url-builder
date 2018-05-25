@@ -4,18 +4,16 @@
 
 package com.palominolabs.http.url
 
-import com.google.common.base.Throwables
+import com.palominolabs.http.url.UrlBuilder.Companion.forHost
+import com.palominolabs.http.url.UrlBuilder.Companion.fromUrl
+import org.junit.Assert.assertEquals
+import org.junit.Assert.fail
+import org.junit.Test
 import java.net.MalformedURLException
 import java.net.URI
 import java.net.URISyntaxException
 import java.net.URL
 import java.nio.charset.CharacterCodingException
-import org.junit.Test
-
-import com.palominolabs.http.url.UrlBuilder.Companion.forHost
-import com.palominolabs.http.url.UrlBuilder.Companion.fromUrl
-import org.junit.Assert.assertEquals
-import org.junit.Assert.fail
 
 class UrlBuilderTest {
 
@@ -445,9 +443,9 @@ class UrlBuilderTest {
         try {
             assertUrlEquals(finalUrl, fromUrl(URL(origUrl)).toUrlString())
         } catch (e: CharacterCodingException) {
-            throw Throwables.propagate(e)
+            throw RuntimeException(e)
         } catch (e: MalformedURLException) {
-            throw Throwables.propagate(e)
+            throw RuntimeException(e)
         }
 
     }
@@ -457,13 +455,13 @@ class UrlBuilderTest {
         try {
             assertEquals(expected, URI(actual).toString())
         } catch (e: URISyntaxException) {
-            throw Throwables.propagate(e)
+            throw RuntimeException(e)
         }
 
         try {
             assertEquals(expected, URL(actual).toString())
         } catch (e: MalformedURLException) {
-            throw Throwables.propagate(e)
+            throw RuntimeException(e)
         }
 
     }

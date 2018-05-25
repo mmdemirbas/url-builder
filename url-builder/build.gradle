@@ -16,20 +16,8 @@ apply plugin: 'com.jfrog.bintray'
 apply plugin: 'maven-publish'
 
 dependencies {
-    compile 'com.google.code.findbugs:jsr305:3.0.0'
-    compile 'com.google.guava:guava:18.0'
-    compile 'org.apache.commons:commons-lang3:3.4'
-
-    compile "org.slf4j:slf4j-api:$depVersions.slf4j"
-    testRuntime "org.slf4j:slf4j-simple:$depVersions.slf4j"
-    testRuntime "org.slf4j:log4j-over-slf4j:$depVersions.slf4j"
-    testRuntime "org.slf4j:jcl-over-slf4j:$depVersions.slf4j"
-    testCompile "org.slf4j:jul-to-slf4j:$depVersions.slf4j"
-
-    testCompile 'junit:junit:4.12'
-
-    testCompile 'org.codehaus.groovy:groovy-all:2.4.4'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    testCompile 'junit:junit:4.12'
 }
 
 task sourceJar(type: Jar, dependsOn: classes) {

@@ -1,10 +1,8 @@
 package com.palominolabs.http.url
 
-import com.google.common.base.Strings
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Scope
 import org.openjdk.jmh.annotations.State
-
 import java.nio.charset.CharacterCodingException
 
 class PercentEncoderBenchmark {
@@ -117,9 +115,9 @@ class PercentEncoderBenchmark {
         internal val LARGE_STRING_ALL_UNSAFE: String
 
         init {
-            LARGE_STRING_MIX = Strings.repeat(SMALL_STRING_MIX, 1000)
-            LARGE_STRING_ALL_SAFE = Strings.repeat(SMALL_STRING_ALL_SAFE, 1000)
-            LARGE_STRING_ALL_UNSAFE = Strings.repeat(SMALL_STRING_ALL_UNSAFE, 1000)
+            LARGE_STRING_MIX = SMALL_STRING_MIX.repeat(1000)
+            LARGE_STRING_ALL_SAFE = SMALL_STRING_ALL_SAFE.repeat(1000)
+            LARGE_STRING_ALL_UNSAFE = SMALL_STRING_ALL_UNSAFE.repeat(1000)
         }
     }
 }

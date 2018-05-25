@@ -18,9 +18,10 @@ jmh {
 
 dependencies {
     compile project(':url-builder')
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+
     // let the IDE see the JMH types
     compile "org.openjdk.jmh:jmh-core:$depVersions.jmh"
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 }
 repositories {
     mavenCentral()

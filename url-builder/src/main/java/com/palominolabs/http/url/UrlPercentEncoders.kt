@@ -4,11 +4,9 @@
 
 package com.palominolabs.http.url
 
-import java.util.BitSet
-import javax.annotation.concurrent.ThreadSafe
-
-import com.google.common.base.Charsets.UTF_8
 import java.nio.charset.CodingErrorAction.REPLACE
+import java.util.*
+import kotlin.text.Charsets.UTF_8
 
 /**
  * See RFC 3986, RFC 1738 and http://www.lunatech-research.com/archives/2009/02/03/what-every-web-developer-must-know-about-url-encoding.
@@ -19,7 +17,6 @@ object UrlPercentEncoders {
     /**
      * an encoder for RFC 3986 reg-names
      */
-
     private val REG_NAME_BIT_SET = BitSet()
 
     private val PATH_BIT_SET = BitSet()

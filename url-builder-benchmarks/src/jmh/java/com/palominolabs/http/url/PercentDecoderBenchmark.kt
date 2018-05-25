@@ -1,15 +1,12 @@
 package com.palominolabs.http.url
 
-import com.google.common.base.Throwables
+import com.palominolabs.http.url.PercentEncoderBenchmark.Companion.LARGE_STRING_MIX
+import com.palominolabs.http.url.PercentEncoderBenchmark.Companion.SMALL_STRING_MIX
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Scope
 import org.openjdk.jmh.annotations.State
-
 import java.nio.charset.CharacterCodingException
 import java.nio.charset.StandardCharsets
-
-import com.palominolabs.http.url.PercentEncoderBenchmark.Companion.LARGE_STRING_MIX
-import com.palominolabs.http.url.PercentEncoderBenchmark.Companion.SMALL_STRING_MIX
 
 class PercentDecoderBenchmark {
 
@@ -40,15 +37,14 @@ class PercentDecoderBenchmark {
             try {
                 SMALL_STRING_ENCODED = encoder.encode(SMALL_STRING_MIX)
             } catch (e: CharacterCodingException) {
-                throw Throwables.propagate(e)
+                throw RuntimeException(e)
             }
 
             try {
                 LARGE_STRING_ENCODED = encoder.encode(LARGE_STRING_MIX)
             } catch (e: CharacterCodingException) {
-                throw Throwables.propagate(e)
+                throw RuntimeException(e)
             }
-
         }
     }
 }

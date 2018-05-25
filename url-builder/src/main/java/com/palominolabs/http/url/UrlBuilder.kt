@@ -4,15 +4,12 @@
 
 package com.palominolabs.http.url
 
-import com.google.common.base.Charsets.UTF_8
-import com.google.common.collect.Lists
-import org.apache.commons.lang3.tuple.Pair
 import java.net.URL
 import java.nio.charset.CharacterCodingException
 import java.nio.charset.CharsetDecoder
 import java.util.*
 import java.util.regex.Pattern
-import javax.annotation.concurrent.NotThreadSafe
+import kotlin.text.Charsets.UTF_8
 
 /**
  * Builder for urls with url-encoding applied to path, query param, etc.
@@ -22,6 +19,17 @@ import javax.annotation.concurrent.NotThreadSafe
  * HTTP-useful URLs.
  */
 @NotThreadSafe
+
+/**
+ * Calls [UrlBuilder.fromUrl] with a UTF-8 CharsetDecoder. The same semantics about the
+ * query string apply.
+ *
+ * @param url url to initialize builder with
+ * @return a UrlBuilder containing the host, path, etc. from the url
+ * @throws CharacterCodingException if char decoding fails
+ * @see UrlBuilder.fromUrl
+ */
+
 class UrlBuilder
 /**
  * Create a URL with UTF-8 encoding.
@@ -32,14 +40,14 @@ class UrlBuilder
  */
 private constructor(private val scheme: String, private val host: String, private val port: Int?) {
 
-    private val queryParams = Lists.newArrayList<Pair<String, String>>()
+    private val queryParams = mutableListOf<Pair<String, String>>()
 
     /**
      * If this is non-null, queryParams must be empty, and vice versa.
      */
     private var unstructuredQuery: String? = null
 
-    private val pathSegments = Lists.newArrayList<PathSegment>()
+    private val pathSegments = mutableListOf<PathSegment>()
 
     private val pathEncoder = UrlPercentEncoders.pathEncoder
     private val regNameEncoder = UrlPercentEncoders.regNameEncoder
@@ -95,7 +103,7 @@ private constructor(private val scheme: String, private val host: String, privat
             throw IllegalStateException("Cannot call queryParam() when this already has an unstructured query specified")
         }
 
-        queryParams.add(Pair.of(name, value))
+        queryParams.add(Pair(name, value))
         return this
     }
 
@@ -151,7 +159,7 @@ private constructor(private val scheme: String, private val host: String, privat
         }
 
         val seg = pathSegments[pathSegments.size - 1]
-        seg.matrixParams.add(Pair.of(name, value))
+        seg.matrixParams.add(Pair(name, value))
         return this
     }
 
@@ -216,9 +224,9 @@ private constructor(private val scheme: String, private val host: String, privat
             val qpIter = queryParams.iterator()
             while (qpIter.hasNext()) {
                 val queryParam = qpIter.next()
-                buf.append(queryParamEncoder.encode(queryParam.key))
+                buf.append(queryParamEncoder.encode(queryParam.first))
                 buf.append('=')
-                buf.append(queryParamEncoder.encode(queryParam.value))
+                buf.append(queryParamEncoder.encode(queryParam.second))
                 if (qpIter.hasNext()) {
                     buf.append('&')
                 }
@@ -254,7 +262,7 @@ private constructor(private val scheme: String, private val host: String, privat
      * Bundle of a path segment name and any associated matrix params.
      */
     private class PathSegment internal constructor(val segment: String) {
-        val matrixParams = Lists.newArrayList<Pair<String, String>>()
+        val matrixParams = mutableListOf<Pair<String, String>>()
     }
 
     companion object {
@@ -370,7 +378,7 @@ private constructor(private val scheme: String, private val host: String, privat
                         break
                     }
 
-                    pairs.add(Pair.of(decoder.decode(queryParamChunks[0]), decoder.decode(queryParamChunks[1])))
+                    pairs.add(Pair(decoder.decode(queryParamChunks[0]), decoder.decode(queryParamChunks[1])))
                 }
 
                 if (parseOk) {
@@ -436,12 +444,3 @@ private constructor(private val scheme: String, private val host: String, privat
         }
     }
 }
-/**
- * Calls [UrlBuilder.fromUrl] with a UTF-8 CharsetDecoder. The same semantics about the
- * query string apply.
- *
- * @param url url to initialize builder with
- * @return a UrlBuilder containing the host, path, etc. from the url
- * @throws CharacterCodingException if char decoding fails
- * @see UrlBuilder.fromUrl
- */

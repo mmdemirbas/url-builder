@@ -1,49 +1,39 @@
 package com.palominolabs.http.url
 
-import javax.annotation.concurrent.NotThreadSafe
 import java.nio.ByteBuffer
 import java.nio.CharBuffer
 import java.nio.charset.CharsetDecoder
 import java.nio.charset.CoderResult
+import java.nio.charset.CoderResult.OVERFLOW
+import java.nio.charset.CoderResult.UNDERFLOW
 import java.nio.charset.MalformedInputException
 import java.nio.charset.UnmappableCharacterException
 
-import java.nio.charset.CoderResult.OVERFLOW
-import java.nio.charset.CoderResult.UNDERFLOW
-
 /**
  * Decodes percent-encoded (%XX) Unicode text.
- */
-@NotThreadSafe
-class PercentDecoder
-/**
+ *
  * @param charsetDecoder            Charset to decode bytes into chars with
  * @param initialEncodedByteBufSize Initial size of buffer that holds encoded bytes
  * @param decodedCharBufSize        Size of buffer that encoded bytes are decoded into
  */
-@JvmOverloads constructor(private val decoder: CharsetDecoder,
-                          initialEncodedByteBufSize: Int = 16,
-                          decodedCharBufSize: Int = 16) {
-
+@NotThreadSafe
+class PercentDecoder(private val decoder: CharsetDecoder,
+                     initialEncodedByteBufSize: Int = 16,
+                     decodedCharBufSize: Int = 16) {
     /**
      * bytes represented by the current sequence of %-triples. Resized as needed.
      */
-    private var encodedBuf: ByteBuffer? = null
+    private var encodedBuf = ByteBuffer.allocate(initialEncodedByteBufSize)!!
 
     /**
      * Written to with decoded chars by decoder
      */
-    private val decodedCharBuf: CharBuffer
+    private val decodedCharBuf = CharBuffer.allocate(decodedCharBufSize)!!
 
     /**
      * The decoded string for the current input
      */
     private val outputBuf = StringBuilder()
-
-    init {
-        encodedBuf = ByteBuffer.allocate(initialEncodedByteBufSize)
-        decodedCharBuf = CharBuffer.allocate(decodedCharBufSize)
-    }
 
     /**
      * @param input Input with %-encoded representation of characters in this instance's configured character set, e.g.
@@ -53,7 +43,7 @@ class PercentDecoder
      * @throws UnmappableCharacterException if decoder is configured to report errors and an unmappable character is
      * detected
      */
-//    @Throws(MalformedInputException::class, UnmappableCharacterException::class)
+    @Throws(MalformedInputException::class, UnmappableCharacterException::class)
     fun decode(input: CharSequence): String {
         outputBuf.setLength(0)
         // this is almost always an underestimate of the size needed:
@@ -193,9 +183,3 @@ class PercentDecoder
         outputBuf.append(decodedCharBuf)
     }
 }
-/**
- * Construct a new PercentDecoder with default buffer sizes.
- *
- * @param charsetDecoder Charset to decode bytes into chars with
- * @see PercentDecoder.PercentDecoder
- */
