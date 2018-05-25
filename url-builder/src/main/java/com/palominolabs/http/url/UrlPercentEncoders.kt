@@ -9,7 +9,7 @@ import java.util.*
 import kotlin.text.Charsets.UTF_8
 
 /**
- * See RFC 3986, RFC 1738 and http://www.lunatech-research.com/archives/2009/02/03/what-every-web-developer-must-know-about-url-encoding.
+ * See RFC 3986, RFC 1738 and https://www.talisman.org/~erlkonig/misc/lunatech%5Ewhat-every-webdev-must-know-about-url-encoding.
  */
 @ThreadSafe
 object UrlPercentEncoders {
