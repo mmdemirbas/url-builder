@@ -8,7 +8,6 @@ import java.net.URLEncoder
 import java.nio.charset.CharacterCodingException
 
 class URLEncoderBenchmark {
-
     @Benchmark
     @Throws(CharacterCodingException::class, UnsupportedEncodingException::class)
     fun testUrlEncodeSmall() = URLEncoder.encode(SMALL_STRING_MIX, "UTF-8")!!

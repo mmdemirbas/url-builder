@@ -1,6 +1,5 @@
 package com.palominolabs.http.url
 
-import com.palominolabs.http.url.PercentEncoders.throwIfError
 import java.nio.ByteBuffer
 import java.nio.CharBuffer
 import java.nio.charset.CharsetDecoder
@@ -17,7 +16,6 @@ import java.nio.charset.UnmappableCharacterException
  * @param initialEncodedByteBufSize Initial size of buffer that holds encoded bytes
  * @param decodedCharBufSize        Size of buffer that encoded bytes are decoded into
  */
-@NotThreadSafe
 class PercentDecoder(private val charsetDecoder: CharsetDecoder,
                      initialEncodedByteBufSize: Int = 16,
                      decodedCharBufSize: Int = 16) {

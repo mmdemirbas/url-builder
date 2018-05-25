@@ -38,8 +38,10 @@ class PercentEncoderTest {
         assertEquals("abcd%41%42%43%44", newEncoder(set, UTF_8).encode("abcdABCD"))
     }
 
-    private fun newEncoder(set: BitSet, charset: Charset) =
-            PercentEncoder(set, charset.newEncoder().onMalformedInput(REPLACE).onUnmappableCharacter(REPLACE))
+    private fun newEncoder(safeChars: BitSet, charset: Charset) =
+            PercentEncoder(charset.newEncoder().onMalformedInput(REPLACE).onUnmappableCharacter(REPLACE)) {
+                safeChars.get(it.toInt())
+            }
 
     private fun setRange(bs: BitSet, from: Char, to: Char) {
         var i: Int = from.toInt()

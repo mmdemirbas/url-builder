@@ -8,7 +8,6 @@ import java.net.URL
 import java.nio.charset.CharacterCodingException
 import java.nio.charset.CharsetDecoder
 import java.util.*
-import java.util.regex.Pattern
 import kotlin.text.Charsets.UTF_8
 
 /**
@@ -21,31 +20,114 @@ import kotlin.text.Charsets.UTF_8
  * Create a URL with UTF-8 encoding.
  *
  * @param scheme scheme (e.g. http)
- * @param host   host (e.g. foo.com or 1.2.3.4 or [::1])
+ * @param host   host in any of the valid syntaxes: reg-name (a dns name, e.g. foo.com), ipv4 literal (1.2.3.4),
+ * ipv6 literal ([::1]), excluding IPvFuture since no one uses that in practice
  * @param port   null or a positive integer
  */
-@NotThreadSafe
-class UrlBuilder private constructor(private val scheme: String, private val host: String, private val port: Int?) {
+class UrlBuilder(private val scheme: String, private val host: String, private val port: Int? = null) {
 
-    private val queryParams = mutableListOf<Pair<String, String>>()
+    /////////  scheme://host:port/path?queryParam=value&queryParam2=value2#fragment
+    /////////  scheme://host:port/path?unstructuredQuery
+
 
     /**
-     * If this is non-null, queryParams must be empty, and vice versa.
+     * Create a UrlBuilder initialized with the contents of a [URL].
+     *
+     * The query string will be parsed into HTML4 query params if it can be separated into a
+     * `&`-separated sequence of `key=value` pairs. The sequence of query params can then be
+     * appended to by continuing to call [UrlBuilder.queryParam]. The concept of query params is
+     * only part of the HTML spec (and common HTTP usage), though, so it's perfectly legal to have a query string that
+     * is in some other form. To represent this case, if the aforementioned param-parsing attempt fails, the query
+     * string will be treated as just a monolithic, unstructured, string. In this case,
+     * calls to [UrlBuilder.queryParam] on the resulting instance will throw [IllegalStateException], and only calls
+     * to [UrlBuilder.unstructuredQuery]}, which replaces the entire query string, are allowed.
+     *
+     * @param url            url to initialize builder with
+     * @param charsetDecoder the decoder to decode encoded bytes with (except for reg names, which are always UTF-8)
+     * @return a UrlBuilder containing the host, path, etc. from the url
+     * @throws CharacterCodingException if decoding percent-encoded bytes fails and charsetDecoder is configured to
+     * report errors
+     * @see UrlBuilder.fromUrl
      */
-    private var unstructuredQuery: String? = null
+    @Throws(CharacterCodingException::class) @JvmOverloads constructor(url: URL,
+                                                                       charsetDecoder: CharsetDecoder = UTF_8.newDecoder()) : this(
+            url.protocol,
+            PercentDecoder(UTF_8.newDecoder()).decode(url.host),
+            url.port) {
+        val decoder = PercentDecoder(charsetDecoder)
+        for (pathChunk in url.path.split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) {
+            when {
+                pathChunk.isEmpty() -> {
+                }
+                pathChunk[0] != ';' -> {
+                    // otherwise, path chunk is non empty and does not start with a ';'
+                    val matrixChunks = pathChunk.split(";".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
 
-    private val pathSegments = mutableListOf<PathSegment>()
+                    // first chunk is always the path segment. If there is a trailing ; and no matrix params, the ; will
+                    // not be included in the final url.
+                    pathSegment(decoder.decode(matrixChunks[0]))
 
-    private val pathEncoder = PercentEncoders.newPathEncoder()
-    private val regNameEncoder = PercentEncoders.newRegNameEncoder()
-    private val matrixEncoder = PercentEncoders.newMatrixEncoder()
-    private val queryParamEncoder = PercentEncoders.newQueryParamEncoder()
-    private val unstructuredQueryEncoder = PercentEncoders.newUnstructuredQueryEncoder()
-    private val fragmentEncoder = PercentEncoders.newFragmentEncoder()
+                    // if there any other chunks, they're matrix param pairs
+                    matrixChunks.drop(1).forEach { populateMatrixParam(decoder, it) }
+                }
+                else                -> {
+                    pathSegment("")
+                    // empty path segment, but matrix params
+                    pathChunk.substring(1).split(";".toRegex()).dropLastWhile { it.isEmpty() }.forEach { matrixChunk ->
+                        populateMatrixParam(decoder, matrixChunk)
+                    }
+                }
+            }
+        }
 
-    private var fragment: String? = null
+        if (url.query != null) {
+            val q = url.query
+
+            // try to parse into &-separated key=value pairs
+            val pairs = ArrayList<Pair<String, String>>()
+            var parseOk = true
+
+            for (queryChunk in q.split("&".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) {
+                val queryParamChunks = queryChunk.split("=".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+                if (queryParamChunks.size != 2) {
+                    parseOk = false
+                    break
+                }
+                pairs.add(Pair(decoder.decode(queryParamChunks[0]), decoder.decode(queryParamChunks[1])))
+            }
+
+            when {
+                parseOk -> pairs.forEach { (key, value) -> queryParam(key, value) }
+                else    -> unstructuredQuery(decoder.decode(q))
+            }
+        }
+
+        if (url.ref != null) fragment(decoder.decode(url.ref))
+    }
+
+    @Throws(CharacterCodingException::class)
+    private fun populateMatrixParam(decoder: PercentDecoder, pathMatrixChunk: String) {
+        val pair = pathMatrixChunk.split("=".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+        when {
+            pair.size == 2 -> matrixParam(decoder.decode(pair[0]), decoder.decode(pair[1]))
+            else           -> throw IllegalArgumentException("Malformed matrix param: <$pathMatrixChunk>")
+        }
+    }
+
+    private val pathEncoder = SafeChars.PATH.newEncoder()
+    private val regNameEncoder = SafeChars.REG_NAME.newEncoder()
+    private val matrixEncoder = SafeChars.MATRIX.newEncoder()
+    private val queryParamEncoder = SafeChars.QUERY_PARAM.newEncoder()
+    private val unstructuredQueryEncoder = SafeChars.UNSTRUCTURED_QUERY.newEncoder()
+    private val fragmentEncoder = SafeChars.FRAGMENT.newEncoder()
 
     private var forceTrailingSlash = false
+
+    private val pathSegments = mutableListOf<PathSegment>()
+    /** If this is non-null, queryParams must be empty, and vice versa. */
+    private var unstructuredQuery: String? = null
+    private val queryParams = mutableListOf<Pair<String, String>>()
+    private var fragment: String? = null
 
     /**
      * Add a path segment.
@@ -70,26 +152,30 @@ class UrlBuilder private constructor(private val scheme: String, private val hos
     }
 
     /**
-     * Add an HTML query parameter. Query parameters will be encoded in the order added.
-     *
-     * Using query strings to encode key=value pairs is not part of the URI/URL specification; it is specified by
-     * http://www.w3.org/TR/html401/interact/forms.html#form-content-type.
-     *
-     * If you use this method to build a query string, or created this builder from a url with a query string that can
-     * successfully be parsed into query param pairs, you cannot subsequently use [ ][UrlBuilder.unstructuredQuery]. See [UrlBuilder.fromUrl].
+     * Add a matrix param to the last added path segment. If no segments have been added, the param will be added to the
+     * root. Matrix params will be encoded in the order added.
      *
      * @param name  param name
      * @param value param value
      * @return this
      */
-    fun queryParam(name: String, value: String): UrlBuilder {
-        when (unstructuredQuery) {
-            null -> {
-                queryParams.add(Pair(name, value))
-                return this
-            }
-            else -> throw IllegalStateException("Cannot call queryParam() when this already has an unstructured query specified")
+    fun matrixParam(name: String, value: String): UrlBuilder {
+        if (pathSegments.isEmpty()) {
+            // create an empty path segment to represent a matrix param applied to the root
+            pathSegment("")
         }
+        pathSegments.last().matrixParams.add(Pair(name, value))
+        return this
+    }
+
+    /**
+     * Force the generated URL to have a trailing slash at the end of the path.
+     *
+     * @return this
+     */
+    fun forceTrailingSlash(): UrlBuilder {
+        forceTrailingSlash = true
+        return this
     }
 
     /**
@@ -114,6 +200,29 @@ class UrlBuilder private constructor(private val scheme: String, private val hos
     }
 
     /**
+     * Add an HTML query parameter. Query parameters will be encoded in the order added.
+     *
+     * Using query strings to encode key=value pairs is not part of the URI/URL specification; it is specified by
+     * http://www.w3.org/TR/html401/interact/forms.html#form-content-type.
+     *
+     * If you use this method to build a query string, or created this builder from a url with a query string that can
+     * successfully be parsed into query param pairs, you cannot subsequently use [UrlBuilder.unstructuredQuery].
+     *
+     * @param name  param name
+     * @param value param value
+     * @return this
+     */
+    fun queryParam(name: String, value: String): UrlBuilder {
+        when (unstructuredQuery) {
+            null -> {
+                queryParams.add(Pair(name, value))
+                return this
+            }
+            else -> throw IllegalStateException("Cannot call queryParam() when this already has an unstructured query specified")
+        }
+    }
+
+    /**
      * Clear the unstructured query and any query params.
      *
      * Since the query / query param situation is a little complicated, this method will let you remove all query
@@ -129,23 +238,6 @@ class UrlBuilder private constructor(private val scheme: String, private val hos
     }
 
     /**
-     * Add a matrix param to the last added path segment. If no segments have been added, the param will be added to the
-     * root. Matrix params will be encoded in the order added.
-     *
-     * @param name  param name
-     * @param value param value
-     * @return this
-     */
-    fun matrixParam(name: String, value: String): UrlBuilder {
-        if (pathSegments.isEmpty()) {
-            // create an empty path segment to represent a matrix param applied to the root
-            pathSegment("")
-        }
-        pathSegments[pathSegments.size - 1].matrixParams.add(Pair(name, value))
-        return this
-    }
-
-    /**
      * Set the fragment.
      *
      * @param fragment fragment string
@@ -153,16 +245,6 @@ class UrlBuilder private constructor(private val scheme: String, private val hos
      */
     fun fragment(fragment: String): UrlBuilder {
         this.fragment = fragment
-        return this
-    }
-
-    /**
-     * Force the generated URL to have a trailing slash at the end of the path.
-     *
-     * @return this
-     */
-    fun forceTrailingSlash(): UrlBuilder {
-        forceTrailingSlash = true
         return this
     }
 
@@ -175,7 +257,7 @@ class UrlBuilder private constructor(private val scheme: String, private val hos
     @Throws(CharacterCodingException::class)
     fun toUrlString(): String {
         val buf = StringBuilder("$scheme://${encodeHost(host)}")
-        if (port != null) buf.append(":$port")
+        if (port != null && port >= 0) buf.append(":$port")
 
         pathSegments.forEach { pathSegment ->
             buf.append('/')
@@ -218,20 +300,19 @@ class UrlBuilder private constructor(private val scheme: String, private val hos
      */
     @Throws(CharacterCodingException::class)
     private fun encodeHost(host: String): String {
-        // matching order: IP-literal, IPv4, reg-name
         return when {
-            IPV4_PATTERN.matcher(host).matches() -> host
-            IPV6_PATTERN.matcher(host).matches() -> host
-            else                                 -> regNameEncoder.encode(host)
+            IPV4_PATTERN.matches(host) || IPV6_PATTERN.matches(host) -> host
+            else                                                     -> {
+                // it's a reg-name, which MUST be encoded as UTF-8 (regardless of the rest of the URL)
+                regNameEncoder.encode(host)
+            }
         }
-
-        // it's a reg-name, which MUST be encoded as UTF-8 (regardless of the rest of the URL)
     }
 
     /**
      * Bundle of a path segment name and any associated matrix params.
      */
-    private class PathSegment internal constructor(val segment: String) {
+    private class PathSegment(val segment: String) {
         val matrixParams = mutableListOf<Pair<String, String>>()
     }
 
@@ -240,164 +321,13 @@ class UrlBuilder private constructor(private val scheme: String, private val hos
          * IPv6 address, cribbed from http://stackoverflow.com/questions/46146/what-are-the-java-regular-expressions-for-matching-ipv4-and-ipv6-strings
          */
         private val IPV6_PATTERN =
-                Pattern.compile("\\A\\[((?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)::((?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)]\\z")
+                "\\A\\[((?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)::((?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)]\\z".toRegex()
 
         /**
          * IPv4 dotted quad
          */
         private val IPV4_PATTERN =
-                Pattern.compile("\\A(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}\\z")
+                "\\A(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}\\z".toRegex()
 
-        /**
-         * Create a URL with an null port and UTF-8 encoding.
-         *
-         * @param scheme scheme (e.g. http)
-         * @param host   host in any of the valid syntaxes: reg-name (a dns name), ipv4 literal (1.2.3.4), ipv6 literal
-         * ([::1]), excluding IPvFuture since no one uses that in practice
-         * @return a url builder
-         * @see UrlBuilder.forHost
-         */
-        fun forHost(scheme: String, host: String) = UrlBuilder(scheme, host, null)
-
-        /**
-         * @param scheme scheme (e.g. http)
-         * @param host   host in any of the valid syntaxes: reg-name ( a dns name), ipv4 literal (1.2.3.4), ipv6 literal
-         * ([::1]), excluding IPvFuture since no one uses that in practice
-         * @param port   port
-         * @return a url builder
-         */
-        fun forHost(scheme: String, host: String, port: Int) = UrlBuilder(scheme, host, port)
-
-        /**
-         * Create a UrlBuilder initialized with the contents of a [URL].
-         *
-         * The query string will be parsed into HTML4 query params if it can be separated into a
-         * `&`-separated sequence of `key=value` pairs. The sequence of query params can then be
-         * appended to by continuing to call [UrlBuilder.queryParam]. The concept of query params is
-         * only part of the HTML spec (and common HTTP usage), though, so it's perfectly legal to have a query string that
-         * is in some other form. To represent this case, if the aforementioned param-parsing attempt fails, the query
-         * string will be treated as just a monolithic, unstructured, string. In this case, calls to [ ][UrlBuilder.queryParam] on the resulting instance will throw IllegalStateException, and only calls
-         * to [UrlBuilder.unstructuredQuery]}, which replaces the entire query string, are allowed.
-         *
-         * @param url            url to initialize builder with
-         * @param charsetDecoder the decoder to decode encoded bytes with (except for reg names, which are always UTF-8)
-         * @return a UrlBuilder containing the host, path, etc. from the url
-         * @throws CharacterCodingException if decoding percent-encoded bytes fails and charsetDecoder is configured to
-         * report errors
-         * @see UrlBuilder.fromUrl
-         */
-        @Throws(CharacterCodingException::class)
-        @JvmOverloads
-        fun fromUrl(url: URL, charsetDecoder: CharsetDecoder = UTF_8.newDecoder()): UrlBuilder {
-            val decoder = PercentDecoder(charsetDecoder)
-            // reg names must be encoded UTF-8
-            val regNameDecoder = when (UTF_8) {
-                charsetDecoder.charset() -> decoder
-                else                     -> PercentDecoder(UTF_8.newDecoder())
-            }
-
-            var port: Int? = url.port
-            if (port == -1) port = null
-
-            val builder = UrlBuilder(url.protocol, regNameDecoder.decode(url.host), port)
-            buildFromPath(builder, decoder, url)
-            buildFromQuery(builder, decoder, url)
-
-            if (url.ref != null) builder.fragment(decoder.decode(url.ref))
-            return builder
-        }
-
-        /**
-         * Populate a url builder based on the query of a url
-         *
-         * @param builder builder
-         * @param decoder decoder
-         * @param url     url
-         * @throws CharacterCodingException
-         */
-        @Throws(CharacterCodingException::class)
-        private fun buildFromQuery(builder: UrlBuilder, decoder: PercentDecoder, url: URL) {
-            if (url.query != null) {
-                val q = url.query
-
-                // try to parse into &-separated key=value pairs
-                val pairs = ArrayList<Pair<String, String>>()
-                var parseOk = true
-
-                for (queryChunk in q.split("&".toRegex()).dropLastWhile({ it.isEmpty() }).toTypedArray()) {
-                    val queryParamChunks =
-                            queryChunk.split("=".toRegex()).dropLastWhile({ it.isEmpty() }).toTypedArray()
-
-                    if (queryParamChunks.size != 2) {
-                        parseOk = false
-                        break
-                    }
-
-                    pairs.add(Pair(decoder.decode(queryParamChunks[0]), decoder.decode(queryParamChunks[1])))
-                }
-
-                when {
-                    parseOk -> pairs.forEach { (key, value) -> builder.queryParam(key, value) }
-                    else    -> builder.unstructuredQuery(decoder.decode(q))
-                }
-            }
-        }
-
-        /**
-         * Populate the path segments of a url builder from a url
-         *
-         * @param builder builder
-         * @param decoder decoder
-         * @param url     url
-         * @throws CharacterCodingException
-         */
-        @Throws(CharacterCodingException::class)
-        private fun buildFromPath(builder: UrlBuilder, decoder: PercentDecoder, url: URL) {
-            for (pathChunk in url.path.split("/".toRegex()).dropLastWhile({ it.isEmpty() }).toTypedArray()) {
-                if (pathChunk == "") continue
-
-                if (pathChunk[0] == ';') {
-                    builder.pathSegment("")
-                    // empty path segment, but matrix params
-                    pathChunk.substring(1).split(";".toRegex()).dropLastWhile { it.isEmpty() }.forEach { matrixChunk ->
-                        buildFromMatrixParamChunk(decoder, builder, matrixChunk)
-                    }
-                    continue
-                }
-
-                // otherwise, path chunk is non empty and does not start with a ';'
-
-                val matrixChunks = pathChunk.split(";".toRegex()).dropLastWhile({ it.isEmpty() }).toTypedArray()
-
-                // first chunk is always the path segment. If there is a trailing ; and no matrix params, the ; will
-                // not be included in the final url.
-                builder.pathSegment(decoder.decode(matrixChunks[0]))
-
-                // if there any other chunks, they're matrix param pairs
-                (1 until matrixChunks.size).forEach { i ->
-                    buildFromMatrixParamChunk(decoder, builder, matrixChunks[i])
-                }
-            }
-        }
-
-        @Throws(CharacterCodingException::class)
-        private fun buildFromMatrixParamChunk(decoder: PercentDecoder, ub: UrlBuilder, pathMatrixChunk: String) {
-            val mtxPair = pathMatrixChunk.split("=".toRegex()).dropLastWhile({ it.isEmpty() }).toTypedArray()
-            if (mtxPair.size != 2) throw IllegalArgumentException("Malformed matrix param: <$pathMatrixChunk>")
-
-            val mtxName = mtxPair[0]
-            val mtxVal = mtxPair[1]
-            ub.matrixParam(decoder.decode(mtxName), decoder.decode(mtxVal))
-        }
     }
 }
-
-/**
- * Calls [UrlBuilder.fromUrl] with a UTF-8 CharsetDecoder. The same semantics about the
- * query string apply.
- *
- * @param url url to initialize builder with
- * @return a UrlBuilder containing the host, path, etc. from the url
- * @throws CharacterCodingException if char decoding fails
- * @see UrlBuilder.fromUrl
- */

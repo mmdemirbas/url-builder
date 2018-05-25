@@ -1,5 +1,6 @@
 package com.palominolabs.http.url
 
+import com.palominolabs.http.url.SafeChars
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -54,7 +55,7 @@ class PercentDecoderTest {
 
     @Test
     fun testRandomStrings() {
-        val encoder = PercentEncoders.newUnstructuredQueryEncoder()
+        val encoder = SafeChars.UNSTRUCTURED_QUERY.newEncoder()
         val rand = Random()
 
         val seed = rand.nextLong()

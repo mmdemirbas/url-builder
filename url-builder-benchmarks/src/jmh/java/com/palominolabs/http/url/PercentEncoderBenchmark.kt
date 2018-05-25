@@ -6,10 +6,9 @@ import org.openjdk.jmh.annotations.State
 import java.nio.charset.CharacterCodingException
 
 class PercentEncoderBenchmark {
-
     @State(Scope.Thread)
     class ThreadState {
-        internal var encoder = PercentEncoders.newUnstructuredQueryEncoder()
+        internal var encoder = SafeChars.UNSTRUCTURED_QUERY.newEncoder()
         internal var noOpHandler = { c: Char -> }
 
         var c: Char = ' '

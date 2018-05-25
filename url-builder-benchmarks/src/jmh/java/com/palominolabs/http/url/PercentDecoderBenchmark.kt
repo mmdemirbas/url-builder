@@ -27,7 +27,7 @@ class PercentDecoderBenchmark {
         internal val LARGE_STRING_ENCODED: String
 
         init {
-            val encoder = PercentEncoders.newUnstructuredQueryEncoder()
+            val encoder = SafeChars.UNSTRUCTURED_QUERY.newEncoder()
             SMALL_STRING_ENCODED = encoder.encode(SMALL_STRING_MIX)
             LARGE_STRING_ENCODED = encoder.encode(LARGE_STRING_MIX)
         }

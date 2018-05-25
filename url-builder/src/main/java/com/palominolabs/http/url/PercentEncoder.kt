@@ -4,7 +4,6 @@
 
 package com.palominolabs.http.url
 
-import com.palominolabs.http.url.PercentEncoders.throwIfError
 import java.lang.Character.isHighSurrogate
 import java.lang.Character.isLowSurrogate
 import java.nio.ByteBuffer
@@ -12,7 +11,6 @@ import java.nio.CharBuffer
 import java.nio.charset.CharsetEncoder
 import java.nio.charset.MalformedInputException
 import java.nio.charset.UnmappableCharacterException
-import java.util.*
 
 /**
  * Encodes unsafe characters as a sequence of %XX hex-encoded bytes.
@@ -24,20 +22,15 @@ import java.util.*
  * those chars set to true. Treated as read only.
  * @param charsetEncoder charset encoder to encode characters with. Make sure to not re-use CharsetEncoder instances
  * across threads.
-
  */
-@NotThreadSafe
-class PercentEncoder(private val safeChars: BitSet, private val charsetEncoder: CharsetEncoder) {
+class PercentEncoder(private val charsetEncoder: CharsetEncoder, private val isSafeChar: (Char) -> Boolean) {
     /**
      * Pre-allocate a StringBuilder to make the common case of encoding to a string faster
      */
     private val stringBuilder = StringBuilder()
 
-    // why is this a float? sigh.
-    private val maxBytesPerChar = 1 + charsetEncoder.maxBytesPerChar().toInt()
-
     // need to handle surrogate pairs, so need to be able to handle 2 chars worth of stuff at once
-    private val encodedBytes = ByteBuffer.allocate(maxBytesPerChar * 2)!!
+    private val encodedBytes = ByteBuffer.allocate((charsetEncoder.maxBytesPerChar().toInt() + 1) * 2)!!
 
     private val unsafeCharsToEncode = CharBuffer.allocate(2)!!
 
@@ -55,7 +48,7 @@ class PercentEncoder(private val safeChars: BitSet, private val charsetEncoder: 
         var i = 0
         while (i < input.length) {
             val c = input[i]
-            if (safeChars.get(c.toInt())) {
+            if (isSafeChar(c)) {
                 onOutputChar(c)
                 i++
                 continue
@@ -64,6 +57,7 @@ class PercentEncoder(private val safeChars: BitSet, private val charsetEncoder: 
             // not a safe char
             unsafeCharsToEncode.clear()
             unsafeCharsToEncode.append(c)
+
             when {
                 !isHighSurrogate(c)   -> {
                 }
@@ -77,9 +71,11 @@ class PercentEncoder(private val safeChars: BitSet, private val charsetEncoder: 
                             unsafeCharsToEncode.append(lowSurrogate)
                             i++
                         }
-                        else                         -> throw IllegalArgumentException("Invalid UTF-16: Char $i is a high surrogate (\\u" + Integer.toHexString(
-                                c.toInt()) + "), but char " + (i + 1) + " is not a low surrogate (\\u" + Integer.toHexString(
-                                lowSurrogate.toInt()) + ")")
+                        else                         -> {
+                            throw IllegalArgumentException("Invalid UTF-16: Char $i is a high surrogate (\\u${c.toInt().toString(
+                                    16)}), but char ${i + 1} is not a low surrogate (\\u${lowSurrogate.toInt().toString(
+                                    16)})")
+                        }
                     }
                 }
             }
@@ -120,10 +116,8 @@ class PercentEncoder(private val safeChars: BitSet, private val charsetEncoder: 
         unsafeCharsToEncode.flip()
         encodedBytes.clear()
         charsetEncoder.reset()
-        var result = charsetEncoder.encode(unsafeCharsToEncode, encodedBytes, true)
-        result.throwIfError()
-        result = charsetEncoder.flush(encodedBytes)
-        result.throwIfError()
+        charsetEncoder.encode(unsafeCharsToEncode, encodedBytes, true).throwIfError()
+        charsetEncoder.flush(encodedBytes).throwIfError()
 
         // read contents of bytebuffer
         encodedBytes.flip()
