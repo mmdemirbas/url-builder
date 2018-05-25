@@ -6,7 +6,7 @@ import org.junit.Test
 import java.util.*
 import kotlin.text.Charsets.UTF_8
 
-class PercentDecoder2Test {
+class PercentDecoderTest {
     @Before
     fun setUp() {
         decoder = PercentDecoder(UTF_8.newDecoder())
