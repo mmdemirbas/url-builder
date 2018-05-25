@@ -9,106 +9,76 @@ class PercentEncoderBenchmark {
 
     @State(Scope.Thread)
     class ThreadState {
-        internal var encoder = UrlPercentEncoders.unstructuredQueryEncoder
-        internal var noOpHandler: PercentEncoderOutputHandler = NoOpOutputHandler()
-        internal var accumXorHandler = AccumXorOutputHandler()
+        internal var encoder = PercentEncoders.newUnstructuredQueryEncoder()
+        internal var noOpHandler = { c: Char -> }
+
+        var c: Char = ' '
+        /**
+         * A handler that doesn't allocate, but can't be optimized away
+         */
+        internal var accumXorHandler = { c: Char -> this.c = this.c.toInt().xor(c.toInt()).toChar() }
     }
 
     @Benchmark
     @Throws(CharacterCodingException::class)
-    fun testPercentEncodeTinyMix(state: ThreadState): String {
-        return state.encoder.encode(TINY_STRING_MIX)
-    }
+    fun testPercentEncodeTinyMix(state: ThreadState) = state.encoder.encode(TINY_STRING_MIX)
 
     @Benchmark
     @Throws(CharacterCodingException::class)
-    fun testPercentEncodeSmallMix(state: ThreadState): String {
-        return state.encoder.encode(SMALL_STRING_MIX)
-    }
+    fun testPercentEncodeSmallMix(state: ThreadState) = state.encoder.encode(SMALL_STRING_MIX)
 
     @Benchmark
     @Throws(CharacterCodingException::class)
-    fun testPercentEncodeLargeMix(state: ThreadState): String {
-        return state.encoder.encode(LARGE_STRING_MIX)
-    }
+    fun testPercentEncodeLargeMix(state: ThreadState) = state.encoder.encode(LARGE_STRING_MIX)
 
     @Benchmark
     @Throws(CharacterCodingException::class)
-    fun testPercentEncodeSmallSafe(state: ThreadState): String {
-        return state.encoder.encode(SMALL_STRING_ALL_SAFE)
-    }
+    fun testPercentEncodeSmallSafe(state: ThreadState) = state.encoder.encode(SMALL_STRING_ALL_SAFE)
 
     @Benchmark
     @Throws(CharacterCodingException::class)
-    fun testPercentEncodeLargeSafe(state: ThreadState): String {
-        return state.encoder.encode(LARGE_STRING_ALL_SAFE)
-    }
+    fun testPercentEncodeLargeSafe(state: ThreadState) = state.encoder.encode(LARGE_STRING_ALL_SAFE)
 
     @Benchmark
     @Throws(CharacterCodingException::class)
-    fun testPercentEncodeSmallUnsafe(state: ThreadState): String {
-        return state.encoder.encode(SMALL_STRING_ALL_UNSAFE)
-    }
+    fun testPercentEncodeSmallUnsafe(state: ThreadState) = state.encoder.encode(SMALL_STRING_ALL_UNSAFE)
 
     @Benchmark
     @Throws(CharacterCodingException::class)
-    fun testPercentEncodeLargeUnsafe(state: ThreadState): String {
-        return state.encoder.encode(LARGE_STRING_ALL_UNSAFE)
-    }
+    fun testPercentEncodeLargeUnsafe(state: ThreadState) = state.encoder.encode(LARGE_STRING_ALL_UNSAFE)
 
     @Benchmark
     @Throws(CharacterCodingException::class)
-    fun testPercentEncodeSmallNoOpMix(state: ThreadState) {
-        state.encoder.encode(SMALL_STRING_MIX, state.noOpHandler)
-    }
+    fun testPercentEncodeSmallNoOpMix(state: ThreadState) = state.encoder.encode(SMALL_STRING_MIX, state.noOpHandler)
 
     @Benchmark
     @Throws(CharacterCodingException::class)
-    fun testPercentEncodeLargeNoOpMix(state: ThreadState) {
-        state.encoder.encode(LARGE_STRING_MIX, state.noOpHandler)
-    }
+    fun testPercentEncodeLargeNoOpMix(state: ThreadState) = state.encoder.encode(LARGE_STRING_MIX, state.noOpHandler)
 
     @Benchmark
     @Throws(CharacterCodingException::class)
     fun testPercentEncodeSmallAccumXorMix(state: ThreadState): Char {
         state.encoder.encode(SMALL_STRING_MIX, state.accumXorHandler)
-        return state.accumXorHandler.c
+        return state.c
     }
 
     @Benchmark
     @Throws(CharacterCodingException::class)
     fun testPercentEncodeLargeAccumXorMix(state: ThreadState): Char {
         state.encoder.encode(LARGE_STRING_MIX, state.accumXorHandler)
-        return state.accumXorHandler.c
-    }
-
-    internal class NoOpOutputHandler : PercentEncoderOutputHandler {
-
-        override fun onOutputChar(c: Char) {
-            // no op
-        }
-    }
-
-    /**
-     * A handler that doesn't allocate, but can't be optimized away
-     */
-    internal class AccumXorOutputHandler : PercentEncoderOutputHandler {
-        var c: Char = ' '
-
-        override fun onOutputChar(c: Char) {
-            this.c = this.c.toInt().xor(c.toInt()).toChar()
-        }
+        return state.c
     }
 
     companion object {
-
         // safe and unsafe
-        internal val TINY_STRING_MIX = "foo bar baz"
-        internal val SMALL_STRING_MIX = "small value !@#$%^&*()???????????????!@#$%^&*()"
+        internal const val TINY_STRING_MIX = "foo bar baz"
+        internal const val SMALL_STRING_MIX = "small value !@#$%^&*()???????????????!@#$%^&*()"
+
         // no characters escaped
-        internal val SMALL_STRING_ALL_SAFE = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        internal const val SMALL_STRING_ALL_SAFE = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
         // all characters escaped
-        internal val SMALL_STRING_ALL_UNSAFE = "???????????????????????????????????????????????"
+        internal const val SMALL_STRING_ALL_UNSAFE = "???????????????????????????????????????????????"
 
         internal val LARGE_STRING_MIX: String
         internal val LARGE_STRING_ALL_SAFE: String

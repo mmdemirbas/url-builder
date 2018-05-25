@@ -4,12 +4,12 @@
 
 package com.palominolabs.http.url
 
+import com.palominolabs.http.url.PercentEncoders.throwIfError
 import java.lang.Character.isHighSurrogate
 import java.lang.Character.isLowSurrogate
 import java.nio.ByteBuffer
 import java.nio.CharBuffer
 import java.nio.charset.CharsetEncoder
-import java.nio.charset.CoderResult
 import java.nio.charset.MalformedInputException
 import java.nio.charset.UnmappableCharacterException
 import java.util.*
@@ -17,53 +17,46 @@ import java.util.*
 /**
  * Encodes unsafe characters as a sequence of %XX hex-encoded bytes.
  *
- * This is typically done when encoding components of URLs. See [UrlPercentEncoders] for pre-configured
+ * This is typically done when encoding components of URLs. See [PercentEncoders] for pre-configured
  * PercentEncoder instances.
- */
-@NotThreadSafe
-class PercentEncoder
-/**
- * @param safeChars      the set of chars to NOT encode, stored as a bitset with the int positions corresponding to
+ *
+ *  @param safeChars      the set of chars to NOT encode, stored as a bitset with the int positions corresponding to
  * those chars set to true. Treated as read only.
  * @param charsetEncoder charset encoder to encode characters with. Make sure to not re-use CharsetEncoder instances
  * across threads.
+
  */
-(private val safeChars: BitSet, private val encoder: CharsetEncoder) {
+@NotThreadSafe
+class PercentEncoder(private val safeChars: BitSet, private val charsetEncoder: CharsetEncoder) {
     /**
-     * Pre-allocate a string handler to make the common case of encoding to a string faster
+     * Pre-allocate a StringBuilder to make the common case of encoding to a string faster
      */
-    private val stringHandler = StringBuilderPercentEncoderOutputHandler()
-    private val encodedBytes: ByteBuffer
-    private val unsafeCharsToEncode: CharBuffer
+    private val stringBuilder = StringBuilder()
 
-    init {
+    // why is this a float? sigh.
+    private val maxBytesPerChar = 1 + charsetEncoder.maxBytesPerChar().toInt()
 
-        // why is this a float? sigh.
-        val maxBytesPerChar = 1 + encoder.maxBytesPerChar().toInt()
-        // need to handle surrogate pairs, so need to be able to handle 2 chars worth of stuff at once
-        encodedBytes = ByteBuffer.allocate(maxBytesPerChar * 2)
-        unsafeCharsToEncode = CharBuffer.allocate(2)
-    }
+    // need to handle surrogate pairs, so need to be able to handle 2 chars worth of stuff at once
+    private val encodedBytes = ByteBuffer.allocate(maxBytesPerChar * 2)!!
+
+    private val unsafeCharsToEncode = CharBuffer.allocate(2)!!
 
     /**
      * Encode the input and pass output chars to a handler.
      *
      * @param input   input string
-     * @param handler handler to call on each output character
+     * @param onOutputChar handler to call on each output character
      * @throws MalformedInputException      if encoder is configured to report errors and malformed input is detected
      * @throws UnmappableCharacterException if encoder is configured to report errors and an unmappable character is
      * detected
      */
     @Throws(MalformedInputException::class, UnmappableCharacterException::class)
-    fun encode(input: CharSequence, handler: PercentEncoderOutputHandler) {
-
+    fun encode(input: CharSequence, onOutputChar: (Char) -> Any) {
         var i = 0
         while (i < input.length) {
-
             val c = input[i]
-
             if (safeChars.get(c.toInt())) {
-                handler.onOutputChar(c)
+                onOutputChar(c)
                 i++
                 continue
             }
@@ -71,25 +64,27 @@ class PercentEncoder
             // not a safe char
             unsafeCharsToEncode.clear()
             unsafeCharsToEncode.append(c)
-            if (isHighSurrogate(c)) {
-                if (input.length > i + 1) {
+            when {
+                !isHighSurrogate(c)   -> {
+                }
+                input.length <= i + 1 -> throw IllegalArgumentException("Invalid UTF-16: The last character in the input string was a high surrogate (\\u" + Integer.toHexString(
+                        c.toInt()) + ")")
+                else                  -> {
                     // get the low surrogate as well
                     val lowSurrogate = input[i + 1]
-                    if (isLowSurrogate(lowSurrogate)) {
-                        unsafeCharsToEncode.append(lowSurrogate)
-                        i++
-                    } else {
-                        throw IllegalArgumentException("Invalid UTF-16: Char $i is a high surrogate (\\u" + Integer.toHexString(
+                    when {
+                        isLowSurrogate(lowSurrogate) -> {
+                            unsafeCharsToEncode.append(lowSurrogate)
+                            i++
+                        }
+                        else                         -> throw IllegalArgumentException("Invalid UTF-16: Char $i is a high surrogate (\\u" + Integer.toHexString(
                                 c.toInt()) + "), but char " + (i + 1) + " is not a low surrogate (\\u" + Integer.toHexString(
                                 lowSurrogate.toInt()) + ")")
                     }
-                } else {
-                    throw IllegalArgumentException("Invalid UTF-16: The last character in the input string was a high surrogate (\\u" + Integer.toHexString(
-                            c.toInt()) + ")")
                 }
             }
 
-            flushUnsafeCharBuffer(handler)
+            flushUnsafeCharBuffer(onOutputChar)
             i++
         }
     }
@@ -106,10 +101,10 @@ class PercentEncoder
      */
     @Throws(MalformedInputException::class, UnmappableCharacterException::class)
     fun encode(input: CharSequence): String {
-        stringHandler.reset()
-        stringHandler.ensureCapacity(input.length)
-        encode(input, stringHandler)
-        return stringHandler.contents
+        stringBuilder.setLength(0)
+        stringBuilder.ensureCapacity(input.length)
+        encode(input, stringBuilder::append)
+        return stringBuilder.toString()
     }
 
     /**
@@ -117,54 +112,27 @@ class PercentEncoder
      *
      * Side effects: unsafeCharsToEncode will be read from and cleared. encodedBytes will be cleared and written to.
      *
-     * @param handler where the encoded versions of the contents of unsafeCharsToEncode will be written
+     * @param onOutputChar where the encoded versions of the contents of unsafeCharsToEncode will be written
      */
     @Throws(MalformedInputException::class, UnmappableCharacterException::class)
-    private fun flushUnsafeCharBuffer(handler: PercentEncoderOutputHandler) {
+    private fun flushUnsafeCharBuffer(onOutputChar: (Char) -> Any) {
         // need to read from the char buffer, which was most recently written to
         unsafeCharsToEncode.flip()
-
         encodedBytes.clear()
-
-        encoder.reset()
-        var result = encoder.encode(unsafeCharsToEncode, encodedBytes, true)
-        checkResult(result)
-        result = encoder.flush(encodedBytes)
-        checkResult(result)
+        charsetEncoder.reset()
+        var result = charsetEncoder.encode(unsafeCharsToEncode, encodedBytes, true)
+        result.throwIfError()
+        result = charsetEncoder.flush(encodedBytes)
+        result.throwIfError()
 
         // read contents of bytebuffer
         encodedBytes.flip()
 
         while (encodedBytes.hasRemaining()) {
             val b = encodedBytes.get().toInt()
-
-            handler.onOutputChar('%')
-            handler.onOutputChar(HEX_CODE[b.shr(4) and 0xF])
-            handler.onOutputChar(HEX_CODE[(b and 0xF)])
-        }
-    }
-
-    companion object {
-
-        private val HEX_CODE = "0123456789ABCDEF".toCharArray()
-
-        /**
-         * @param result result to check
-         * @throws IllegalStateException        if result is overflow
-         * @throws MalformedInputException      if result represents malformed input
-         * @throws UnmappableCharacterException if result represents an unmappable character
-         */
-        @Throws(MalformedInputException::class, UnmappableCharacterException::class)
-        private fun checkResult(result: CoderResult) {
-            if (result.isOverflow) {
-                throw IllegalStateException("Byte buffer overflow; this should not happen.")
-            }
-            if (result.isMalformed) {
-                throw MalformedInputException(result.length())
-            }
-            if (result.isUnmappable) {
-                throw UnmappableCharacterException(result.length())
-            }
+            onOutputChar('%')
+            onOutputChar("0123456789ABCDEF"[b shr 4 and 0xF])
+            onOutputChar("0123456789ABCDEF"[b and 0xF])
         }
     }
 }
