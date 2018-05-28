@@ -12,7 +12,6 @@ import java.nio.charset.Charset
 import java.nio.charset.CodingErrorAction.REPLACE
 import java.nio.charset.MalformedInputException
 import java.nio.charset.UnmappableCharacterException
-import java.util.*
 import kotlin.text.Charsets.UTF_16BE
 import kotlin.text.Charsets.UTF_8
 
@@ -22,34 +21,19 @@ class PercentEncoderTest {
 
     @Before
     fun setUp() {
-        val bs = BitSet()
-        setRange(bs, 'a', 'z')
-        setRange(bs, 'A', 'Z')
-        setRange(bs, '0', '9')
-        this.alnum = newEncoder(bs, UTF_8)
-        this.alnum16 = newEncoder(bs, UTF_16BE)
+        this.alnum = newEncoder()
+        this.alnum16 = newEncoder(charset = UTF_16BE)
     }
 
     @Test
     @Throws(CharacterCodingException::class)
     fun testDoesntEncodeSafe() {
-        val set = BitSet()
-        setRange(set, 'a', 'z')
-        assertEquals("abcd%41%42%43%44", newEncoder(set, UTF_8).encode("abcdABCD"))
+        assertEquals("abcd%41%42%43%44", newEncoder(safeChars = "abcd").encode("abcdABCD"))
     }
 
-    private fun newEncoder(safeChars: BitSet, charset: Charset) =
-            PercentEncoder(charset.newEncoder().onMalformedInput(REPLACE).onUnmappableCharacter(REPLACE)) {
-                safeChars.get(it.toInt())
-            }
-
-    private fun setRange(bs: BitSet, from: Char, to: Char) {
-        var i: Int = from.toInt()
-        while (i <= to.toInt()) {
-            bs.set(i)
-            i++
-        }
-    }
+    private fun newEncoder(charset: Charset = UTF_8,
+                           safeChars: String = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") =
+            PercentEncoder(charset.newEncoder().onMalformedInput(REPLACE).onUnmappableCharacter(REPLACE), safeChars)
 
     @Test
     @Throws(MalformedInputException::class, UnmappableCharacterException::class)

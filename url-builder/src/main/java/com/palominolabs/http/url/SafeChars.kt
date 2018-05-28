@@ -1,7 +1,7 @@
 package com.palominolabs.http.url
 
+import java.nio.charset.Charset
 import java.nio.charset.CodingErrorAction
-import java.util.*
 
 private const val commonSafeChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~!$'()*,"
 
@@ -39,11 +39,5 @@ enum class SafeChars(val chars: String) {
 
     FRAGMENT("$commonSafeChars@:&+=;/?");
 
-    private val bitSet = BitSet().apply { chars.forEach { set(it.toInt()) } }
-
-    fun isSafeChar(c: Char) = bitSet.get(c.toInt())
-
-    fun newEncoder() =
-            PercentEncoder(Charsets.UTF_8.newEncoder().onMalformedInput(CodingErrorAction.REPLACE).onUnmappableCharacter(
-                    CodingErrorAction.REPLACE)!!, this::isSafeChar)
+    fun newEncoder() = PercentEncoder(Charsets.UTF_8, chars)
 }

@@ -8,9 +8,8 @@ import java.lang.Character.isHighSurrogate
 import java.lang.Character.isLowSurrogate
 import java.nio.ByteBuffer
 import java.nio.CharBuffer
-import java.nio.charset.CharsetEncoder
-import java.nio.charset.MalformedInputException
-import java.nio.charset.UnmappableCharacterException
+import java.nio.charset.*
+import java.util.*
 
 /**
  * Encodes unsafe characters as a sequence of %XX hex-encoded bytes.
@@ -33,6 +32,15 @@ class PercentEncoder(private val charsetEncoder: CharsetEncoder, private val isS
     private val encodedBytes = ByteBuffer.allocate((charsetEncoder.maxBytesPerChar().toInt() + 1) * 2)!!
 
     private val unsafeCharsToEncode = CharBuffer.allocate(2)!!
+
+    constructor(charset: Charset,
+                safeChars: String) : this(charset.newEncoder().onMalformedInput(CodingErrorAction.REPLACE).onUnmappableCharacter(
+            CodingErrorAction.REPLACE)!!, safeChars)
+
+    constructor(charsetEncoder: CharsetEncoder, safeChars: String) : this(charsetEncoder,
+                                                                          BitSet().apply { safeChars.forEach { set(it.toInt()) } })
+
+    constructor(charsetEncoder: CharsetEncoder, safeChars: BitSet) : this(charsetEncoder, { safeChars.get(it.toInt()) })
 
     /**
      * Encode the input and pass output chars to a handler.
