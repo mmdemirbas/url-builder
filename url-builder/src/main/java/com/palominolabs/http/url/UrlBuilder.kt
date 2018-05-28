@@ -6,7 +6,7 @@ package com.palominolabs.http.url
 
 import java.net.URL
 import java.nio.charset.CharacterCodingException
-import java.nio.charset.CharsetDecoder
+import java.nio.charset.Charset
 import java.util.*
 import kotlin.text.Charsets.UTF_8
 
@@ -50,32 +50,28 @@ class UrlBuilder(private val scheme: String, private val host: String, private v
      * @see UrlBuilder.fromUrl
      */
     @Throws(CharacterCodingException::class) @JvmOverloads constructor(url: URL,
-                                                                       charsetDecoder: CharsetDecoder = UTF_8.newDecoder()) : this(
-            url.protocol,
-            PercentDecoder(UTF_8.newDecoder()).decode(url.host),
-            url.port) {
-        val decoder = PercentDecoder(charsetDecoder)
-        for (pathChunk in url.path.split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) {
+                                                                       charset: Charset = UTF_8) : this(url.protocol,
+                                                                                                        decode(url.host),
+                                                                                                        url.port) {
+        url.path.split('/').filter { it.isNotEmpty() }.forEach { pathChunk ->
             when {
-                pathChunk.isEmpty() -> {
+                pathChunk[0] == ';' -> {
+                    pathSegment("")
+                    // empty path segment, but matrix params
+                    pathChunk.substring(1).split(';').dropLastWhile { it.isEmpty() }.forEach { matrixChunk ->
+                        populateMatrixParam(charset, matrixChunk)
+                    }
                 }
-                pathChunk[0] != ';' -> {
+                else                -> {
                     // otherwise, path chunk is non empty and does not start with a ';'
                     val matrixChunks = pathChunk.split(";".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
 
                     // first chunk is always the path segment. If there is a trailing ; and no matrix params, the ; will
                     // not be included in the final url.
-                    pathSegment(decoder.decode(matrixChunks[0]))
+                    pathSegment(decode(matrixChunks[0], charset))
 
                     // if there any other chunks, they're matrix param pairs
-                    matrixChunks.drop(1).forEach { populateMatrixParam(decoder, it) }
-                }
-                else                -> {
-                    pathSegment("")
-                    // empty path segment, but matrix params
-                    pathChunk.substring(1).split(";".toRegex()).dropLastWhile { it.isEmpty() }.forEach { matrixChunk ->
-                        populateMatrixParam(decoder, matrixChunk)
-                    }
+                    matrixChunks.drop(1).forEach { populateMatrixParam(charset, it) }
                 }
             }
         }
@@ -93,33 +89,26 @@ class UrlBuilder(private val scheme: String, private val host: String, private v
                     parseOk = false
                     break
                 }
-                pairs.add(Pair(decoder.decode(queryParamChunks[0]), decoder.decode(queryParamChunks[1])))
+                pairs.add(Pair(decode(queryParamChunks[0], charset), decode(queryParamChunks[1], charset)))
             }
 
             when {
                 parseOk -> pairs.forEach { (key, value) -> queryParam(key, value) }
-                else    -> unstructuredQuery(decoder.decode(q))
+                else    -> unstructuredQuery(decode(q, charset))
             }
         }
 
-        if (url.ref != null) fragment(decoder.decode(url.ref))
+        if (url.ref != null) fragment(decode(url.ref, charset))
     }
 
     @Throws(CharacterCodingException::class)
-    private fun populateMatrixParam(decoder: PercentDecoder, pathMatrixChunk: String) {
-        val pair = pathMatrixChunk.split("=".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+    private fun populateMatrixParam(charset: Charset, pathMatrixChunk: String) {
+        val pair = pathMatrixChunk.split('=').dropLastWhile { it.isEmpty() }.toTypedArray()
         when {
-            pair.size == 2 -> matrixParam(decoder.decode(pair[0]), decoder.decode(pair[1]))
+            pair.size == 2 -> matrixParam(decode(pair[0], charset), decode(pair[1], charset))
             else           -> throw IllegalArgumentException("Malformed matrix param: <$pathMatrixChunk>")
         }
     }
-
-    private val pathEncoder = SafeChars.PATH.newEncoder()
-    private val regNameEncoder = SafeChars.REG_NAME.newEncoder()
-    private val matrixEncoder = SafeChars.MATRIX.newEncoder()
-    private val queryParamEncoder = SafeChars.QUERY_PARAM.newEncoder()
-    private val unstructuredQueryEncoder = SafeChars.UNSTRUCTURED_QUERY.newEncoder()
-    private val fragmentEncoder = SafeChars.FRAGMENT.newEncoder()
 
     private var forceTrailingSlash = false
 
@@ -213,12 +202,12 @@ class UrlBuilder(private val scheme: String, private val host: String, private v
      * @return this
      */
     fun queryParam(name: String, value: String): UrlBuilder {
-        when (unstructuredQuery) {
-            null -> {
+        when {
+            unstructuredQuery == null -> {
                 queryParams.add(Pair(name, value))
                 return this
             }
-            else -> throw IllegalStateException("Cannot call queryParam() when this already has an unstructured query specified")
+            else                      -> throw IllegalStateException("Cannot call queryParam() when this already has an unstructured query specified")
         }
     }
 
@@ -261,10 +250,10 @@ class UrlBuilder(private val scheme: String, private val host: String, private v
 
         pathSegments.forEach { pathSegment ->
             buf.append('/')
-            buf.append(pathEncoder.encode(pathSegment.segment))
+            buf.append(UrlPart.Path.encode(pathSegment.segment))
             pathSegment.matrixParams.forEach { (key, value) ->
-                val keyEncoded = matrixEncoder.encode(key)
-                val valueEncoded = matrixEncoder.encode(value)
+                val keyEncoded = UrlPart.Matrix.encode(key)
+                val valueEncoded = UrlPart.Matrix.encode(value)
                 buf.append(";$keyEncoded=$valueEncoded")
             }
         }
@@ -276,19 +265,19 @@ class UrlBuilder(private val scheme: String, private val host: String, private v
             val qpIter = queryParams.iterator()
             while (qpIter.hasNext()) {
                 val queryParam = qpIter.next()
-                buf.append(queryParamEncoder.encode(queryParam.first))
+                buf.append(UrlPart.QueryParam.encode(queryParam.first))
                 buf.append('=')
-                buf.append(queryParamEncoder.encode(queryParam.second))
+                buf.append(UrlPart.QueryParam.encode(queryParam.second))
                 if (qpIter.hasNext()) buf.append('&')
             }
         } else if (unstructuredQuery != null) {
             buf.append("?")
-            buf.append(unstructuredQueryEncoder.encode(unstructuredQuery!!))
+            buf.append(UrlPart.UnstructuredQuery.encode(unstructuredQuery!!))
         }
 
         if (fragment != null) {
             buf.append('#')
-            buf.append(fragmentEncoder.encode(fragment!!))
+            buf.append(UrlPart.Fragment.encode(fragment!!))
         }
 
         return buf.toString()
@@ -304,7 +293,7 @@ class UrlBuilder(private val scheme: String, private val host: String, private v
             IPV4_PATTERN.matches(host) || IPV6_PATTERN.matches(host) -> host
             else                                                     -> {
                 // it's a reg-name, which MUST be encoded as UTF-8 (regardless of the rest of the URL)
-                regNameEncoder.encode(host)
+                UrlPart.RegName.encode(host)
             }
         }
     }

@@ -1,32 +1,25 @@
 package com.palominolabs.http.url
 
-import com.palominolabs.http.url.SafeChars
 import org.junit.Assert
-import org.junit.Before
 import org.junit.Test
 import java.util.*
 import kotlin.text.Charsets.UTF_8
 
 class PercentDecoderTest {
-    @Before
-    fun setUp() {
-        decoder = PercentDecoder(UTF_8.newDecoder())
-    }
-
     @Test
     fun testDecodesWithoutPercents() {
-        assert("asdf" == decoder.decode("asdf"))
+        assert("asdf" == decode("asdf"))
     }
 
     @Test
     fun testDecodeSingleByte() {
-        assert("#" == decoder.decode("%23"))
+        assert("#" == decode("%23"))
     }
 
     @Test
     fun testIncompletePercentPairNoNumbers() {
         try {
-            decoder.decode("%")
+            decode("%")
             Assert.fail()
         } catch (e: IllegalArgumentException) {
             assert("Could not percent decode <%>: incomplete %-pair at position 0" == e.message)
@@ -36,7 +29,7 @@ class PercentDecoderTest {
     @Test
     fun testIncompletePercentPairOneNumber() {
         try {
-            decoder.decode("%2")
+            decode("%2")
             Assert.fail()
         } catch (e: IllegalArgumentException) {
             assert("Could not percent decode <%2>: incomplete %-pair at position 0" == e.message)
@@ -46,7 +39,7 @@ class PercentDecoderTest {
     @Test
     fun testInvalidHex() {
         try {
-            decoder.decode("%xz")
+            decode("%xz")
             Assert.fail()
         } catch (e: IllegalArgumentException) {
             assert("Invalid %-tuple <%xz>" == e.message)
@@ -55,7 +48,6 @@ class PercentDecoderTest {
 
     @Test
     fun testRandomStrings() {
-        val encoder = SafeChars.UNSTRUCTURED_QUERY.newEncoder()
         val rand = Random()
 
         val seed = rand.nextLong()
@@ -78,7 +70,7 @@ class PercentDecoderTest {
             }
 
             try {
-                decodedBytes = decoder.decode(encoder.encode(buf.toString())).toByteArray(UTF_8)
+                decodedBytes = decode(UrlPart.UnstructuredQuery.encode(buf.toString())).toByteArray(UTF_8)
             } catch (e: IllegalArgumentException) {
                 val charHex = (0 until buf.toString().length).map { Integer.toHexString(buf.toString()[it].toInt()) }
                 Assert.fail("seed: $seed code points: $codePointsHex chars $charHex ${e.message}")
@@ -89,8 +81,6 @@ class PercentDecoderTest {
     }
 
     private fun ByteArray.toHex() = map { Integer.toHexString(it.toInt() and 0xFF)!! }
-
-    private lateinit var decoder: PercentDecoder
 
     companion object {
         private const val CODE_POINT_IN_SUPPLEMENTARY = 2
