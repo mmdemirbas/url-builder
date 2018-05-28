@@ -15,7 +15,7 @@ private const val commonSafeChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ
  *
  * @param safeChars the set of chars to NOT encode
  */
-sealed class UrlPart(safeChars: String) {
+open class UrlPart(val safeChars: String) {
     /**
      * RFC 3986 'reg-name'. This is not very aggressive... it's quite possible to have DNS-illegal names out of this.
      * Regardless, it will at least be URI-compliant even if it's not HTTP URL-compliant.
@@ -46,10 +46,8 @@ sealed class UrlPart(safeChars: String) {
 
     object Fragment : UrlPart("$commonSafeChars@:&+=;/?")
 
-    class Custom(safeChars: String) : UrlPart(safeChars)
 
-
-    private val safeChars = BitSet().apply { safeChars.forEach { set(it.toInt()) } }
+    private val safeCharSet = BitSet().apply { safeChars.forEach { set(it.toInt()) } }
 
     /**
      * Encodes unsafe characters as a sequence of %XX hex-encoded bytes and returns the resulting text as a String.
@@ -78,7 +76,7 @@ sealed class UrlPart(safeChars: String) {
         var i = 0
         while (i < input.length) {
             val c = input[i]
-            if (safeChars.get(c.toInt())) {
+            if (safeCharSet.get(c.toInt())) {
                 builder.append(c)
                 i++
                 continue
@@ -91,8 +89,10 @@ sealed class UrlPart(safeChars: String) {
             when {
                 !Character.isHighSurrogate(c) -> {
                 }
-                input.length <= i + 1         -> throw IllegalArgumentException("Invalid UTF-16: The last character in the input string was a high surrogate (\\u" + Integer.toHexString(
-                        c.toInt()) + ")")
+                input.length <= i + 1         -> {
+                    throw IllegalArgumentException("Invalid UTF-16: The last character in the input string was a high surrogate (\\u" + Integer.toHexString(
+                            c.toInt()) + ")")
+                }
                 else                          -> {
                     // get the low surrogate as well
                     val lowSurrogate = input[i + 1]

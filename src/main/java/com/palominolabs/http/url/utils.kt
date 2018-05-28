@@ -43,31 +43,32 @@ fun decode(input: CharSequence,
     val charsetDecoder = charset.newDecoder()
 
     var i = 0
-    while (i < input.length) {
+    loop@ while (i < input.length) {
         val c = input[i]
-        if (c != '%') {
-            handleEncodedBytes(outputBuf, encodedBuf, decodedCharBuf, charsetDecoder)
-            outputBuf.append(c)
-            i++
-            continue
-        }
-
-        if (i + 2 >= input.length) throw IllegalArgumentException("Could not percent decode <$input>: incomplete %-pair at position $i")
-
-        // grow the byte buf if needed
-        if (encodedBuf.remaining() == 0) {
-            val largerBuf = ByteBuffer.allocate(encodedBuf.capacity() * 2)
-            encodedBuf.flip()
-            largerBuf.put(encodedBuf)
-            encodedBuf = largerBuf
+        when {
+            c != '%'                    -> {
+                handleEncodedBytes(outputBuf, encodedBuf, decodedCharBuf, charsetDecoder)
+                outputBuf.append(c)
+                i++
+                continue@loop
+            }
+            i + 2 >= input.length       -> throw IllegalArgumentException("Could not percent decode <$input>: incomplete %-pair at position $i")
+            encodedBuf.remaining() == 0 -> {
+                // grow the byte buf if needed
+                val largerBuf = ByteBuffer.allocate(encodedBuf.capacity() * 2)
+                encodedBuf.flip()
+                largerBuf.put(encodedBuf)
+                encodedBuf = largerBuf
+            }
         }
 
         // note that we advance i here as we consume chars
         var msBits = Character.digit(input[++i], 16)
         val lsBits = Character.digit(input[++i], 16)
 
-        if (msBits == -1 || lsBits == -1) throw IllegalArgumentException("Invalid %-tuple <" + input.subSequence(i - 2,
-                                                                                                                 i + 1) + ">")
+        if (msBits == -1 || lsBits == -1) {
+            throw IllegalArgumentException("Invalid %-tuple <" + input.subSequence(i - 2, i + 1) + ">")
+        }
 
         msBits = msBits shl 4
         msBits = msBits or lsBits
@@ -78,7 +79,6 @@ fun decode(input: CharSequence,
     }
 
     handleEncodedBytes(outputBuf, encodedBuf, decodedCharBuf, charsetDecoder)
-
     return outputBuf.toString()
 }
 
@@ -94,13 +94,13 @@ private fun handleEncodedBytes(outputBuf: StringBuilder,
     if (encodedBuf.position() == 0) return
 
     charsetDecoder.reset()
-    var coderResult: CoderResult
 
     // switch to reading mode
     encodedBuf.flip()
 
     // loop while we're filling up the decoded char buf, or there's any encoded bytes
     // decode() in practice seems to only consume bytes when it can decode an entire char...
+    var coderResult: CoderResult
     do {
         decodedCharBuf.clear()
         coderResult = charsetDecoder.decode(encodedBuf, decodedCharBuf, false)
