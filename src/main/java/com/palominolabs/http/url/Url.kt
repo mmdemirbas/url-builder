@@ -4,12 +4,8 @@
 
 package com.palominolabs.http.url
 
-import java.net.MalformedURLException
 import java.net.URL
-import java.nio.charset.CharacterCodingException
 import java.nio.charset.Charset
-import java.nio.charset.MalformedInputException
-import java.nio.charset.UnmappableCharacterException
 import java.util.*
 import java.util.regex.Pattern
 
@@ -79,80 +75,74 @@ private val URL_PATTERN =
  *
  * @return Corresponding string with %-encoded data decoded and converted to their corresponding characters
  *
- * @throws MalformedInputException      if decoder is configured to report errors and malformed input is detected
- * @throws UnmappableCharacterException if decoder is configured to report errors and an unmappable character is
- * detected
+ * @throws IllegalArgumentException if decoder is configured to report errors and malformed input is detected or an unmappable character is detected
  */
-@Throws(MalformedInputException::class, UnmappableCharacterException::class)
-fun parseUrl(input: CharSequence): Url {
-    val schemeEnd = input.indexOf("://")
-    if (schemeEnd < 0) throw IllegalArgumentException("Invalid URL: $input")
-
-    val scheme = input.substring(0, schemeEnd)
-
-    val hostStart = schemeEnd + 3
-    val hostEnd = input.indexOfAny(":#/;?".toCharArray(), hostStart)
-    val effectiveHostEnd = if (hostEnd < 0) input.length else hostEnd
-    val host = input.substring(hostStart, effectiveHostEnd)
-
-    val effectivePortStart =
-            if (effectiveHostEnd < input.length && input[effectiveHostEnd] == ':') effectiveHostEnd + 1 else effectiveHostEnd
-    val portEnd = input.indexOfAny("#/;?".toCharArray(), effectiveHostEnd)
-    val effectivePortEnd = if (portEnd < 0) input.length else portEnd
-    val portStr = input.substring(effectivePortStart, effectivePortEnd)
-
-    val pathEnd = input.indexOfAny("#?".toCharArray(), effectivePortEnd)
-    val effectivePathEnd = if (pathEnd < 0) input.length else pathEnd
-    val path = input.substring(effectivePortEnd, effectivePathEnd)
-
-    val queryEnd = input.indexOfAny("#".toCharArray(), effectivePathEnd)
-    val effectiveQueryEnd = if (queryEnd < 0) input.length else queryEnd
-    val queryStr = input.substring(effectivePathEnd, effectiveQueryEnd)
-
-    val fragment =
-            if (effectiveQueryEnd < input.length && input[effectiveQueryEnd] == '#') input.substring(effectiveQueryEnd + 1) else null
-
-    val matcher = URL_PATTERN.matcher(input)
-    if (!matcher.matches()) throw IllegalArgumentException("Invalid URL: $input")
-
-    //    val scheme = matcher.group("scheme")
-    //    val host = matcher.group("host")
-    //    val portStr = matcher.group("port")
-    //    val path = matcher.group("path")
-    val queryParams = matcher.group("queryParams")
-    val unstructuredQuery = matcher.group("unstructuredQuery")
-    //    val fragment = matcher.group("fragment")
-
-    val port = when {
-        portStr.isNullOrEmpty() -> null
-        else                    -> portStr.toInt()
+@Throws(IllegalArgumentException::class)
+fun parseUrl(input: String): Url {
+    val (scheme, schemeToken, schemeRest) = input.splitIntoTwoParts("://")
+    val (host, hostToken, hostRest) = schemeRest.splitIntoTwoParts(":#/;?".toCharArray())
+    val hostOrPortRest: String
+    val port: Int?
+    if (hostToken == ':') {
+        val (portStr, portToken, portRest) = hostRest.splitIntoTwoParts("#/;?".toCharArray())
+        port = when {
+            portStr.isEmpty() -> null
+            else              -> portStr.toInt()
+        }
+        hostOrPortRest = portRest
+    } else {
+        port = null
+        hostOrPortRest = hostRest
     }
-
-    val pathSegments = path.split('/').filter { it.isNotEmpty() }.map { pathSegment ->
-        val chunks = pathSegment.split(';').filter { it.isNotEmpty() }
-        PathSegment(decode(chunks.first()), chunks.drop(1).map { matrixChunk ->
+    val (pathStr, pathToken, pathRest) = hostOrPortRest.splitIntoTwoParts("#?".toCharArray())
+    val path = pathStr.split('/').filter { it.isNotEmpty() }.map { pathSegment ->
+        val chunks = pathSegment.split(';')
+        PathSegment(decode(chunks.first()), chunks.drop(1).filter { it.isNotEmpty() }.map { matrixChunk ->
             val parts = matrixChunk.split('=')
-            if (parts.size != 2) throw MalformedURLException("Malformed matrix param: <$matrixChunk>")
+            if (parts.size != 2) throw IllegalArgumentException("Malformed matrix param: <$matrixChunk>")
             decode(parts[0]) to decode(parts[1])
         })
     }
-
-    val query = when {
-        queryParams != null && queryParams.isNotEmpty()             -> Query.Structured(queryParams.split('&').map { pair ->
-            val parts = pair.split('=')
-            if (parts.size != 2) throw MalformedURLException()
-            decode(parts[0]) to decode(parts[1])
-        })
-        unstructuredQuery != null && unstructuredQuery.isNotEmpty() -> Query.Unstructured(decode(unstructuredQuery))
-        else                                                        -> null
+    val fragment: String?
+    val query: Query?
+    if (pathToken == '?') {
+        val (queryParams, queryToken, queryRest) = pathRest.splitIntoTwoParts("#".toCharArray())
+        query = when {
+            queryParams.isNotEmpty() -> {
+                val chunks = queryParams.split('&')
+                val splittedChunks = chunks.map { it.split('=') }
+                val structured = splittedChunks.all { it.size == 2 }
+                when {
+                    structured -> Query.Structured(splittedChunks.map { decode(it[0]) to decode(it[1]) })
+                    else       -> Query.Unstructured(decode(queryParams))
+                }
+            }
+        //            unstructuredQuery != null && unstructuredQuery.isNotEmpty() -> Query.Unstructured(decode(unstructuredQuery))
+            else                     -> null
+        }
+        fragment = if (queryToken == '#') decode(queryRest) else null
+    } else {
+        query = null
+        fragment = if (pathToken == '#') decode(pathRest) else null
     }
 
-    return Url(scheme = scheme,
-               host = decode(host),
-               port = port,
-               path = pathSegments,
-               query = query,
-               fragment = fragment?.let { decode(it) })
+    return Url(scheme = scheme, host = decode(host), port = port, path = path, query = query, fragment = fragment)
+}
+
+private fun String.splitIntoTwoParts(delimiter: String): Triple<String, String?, String> {
+    val index = indexOf(delimiter)
+    return when {
+        index < 0 -> Triple(this, null, "")
+        else      -> Triple(this.substring(0, index), delimiter, this.substring(index + delimiter.length))
+    }
+}
+
+private fun String.splitIntoTwoParts(delimiters: CharArray): Triple<String, Char?, String> {
+    val index = indexOfAny(delimiters)
+    return when {
+        index < 0 -> Triple(this, null, "")
+        else      -> Triple(this.substring(0, index), this[index], this.substring(index + 1))
+    }
 }
 
 /**
@@ -169,10 +159,10 @@ fun parseUrl(input: CharSequence): Url {
  *
  * @return a UrlBuilder containing the host, path, etc. from the url
  *
- * @throws CharacterCodingException if decoding percent-encoded bytes fails and charsetDecoder is configured to
+ * @throws IllegalArgumentException if decoding percent-encoded bytes fails and charsetDecoder is configured to
  * report errors
  */
-@Throws(CharacterCodingException::class)
+@Throws(IllegalArgumentException::class)
 fun parseUrl(url: URL, charset: Charset = Charsets.UTF_8): Url {
     val pathSegments = url.path.split('/').filterNot { it.isEmpty() }.map { pathChunk ->
         val chunks = pathChunk.split(';')
@@ -219,9 +209,9 @@ fun parseUrl(url: URL, charset: Charset = Charsets.UTF_8): Url {
  * @param forceTrailingSlash true to force the generated URL to have a trailing slash at the end of the path
  *
  * @return a well-formed URL string
- * @throws CharacterCodingException if character encoding fails and the encoder is configured to report errors
+ * @throws IllegalArgumentException if character encoding fails and the encoder is configured to report errors
  */
-@Throws(CharacterCodingException::class)
+@Throws(IllegalArgumentException::class)
 fun Url.toUrlString(forceTrailingSlash: Boolean = false): String {
     // host encoded as in RFC 3986 section 3.2.2
     val hostEncoded = when {
