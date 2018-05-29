@@ -6,7 +6,9 @@ package com.palominolabs.http.url
 
 import java.nio.ByteBuffer
 import java.nio.CharBuffer
-import java.nio.charset.*
+import java.nio.charset.Charset
+import java.nio.charset.CharsetDecoder
+import java.nio.charset.CoderResult
 
 
 /**
@@ -20,11 +22,9 @@ import java.nio.charset.*
  *
  * @return Corresponding string with %-encoded data decoded and converted to their corresponding characters
  *
- * @throws MalformedInputException      if decoder is configured to report errors and malformed input is detected
- * @throws UnmappableCharacterException if decoder is configured to report errors and an unmappable character is
- * detected
+ * @throws IllegalArgumentException      if decoder is configured to report errors and malformed input is detected or an unmappable character is detected
  */
-@Throws(MalformedInputException::class, UnmappableCharacterException::class)
+@Throws(IllegalArgumentException::class)
 fun decode(input: CharSequence,
            charset: Charset = Charsets.UTF_8,
            initialEncodedByteBufSize: Int = 16,
@@ -85,7 +85,7 @@ fun decode(input: CharSequence,
 /**
  * Decode any buffered encoded bytes and write them to the output buf.
  */
-@Throws(MalformedInputException::class, UnmappableCharacterException::class)
+@Throws(IllegalArgumentException::class, IllegalStateException::class)
 private fun handleEncodedBytes(outputBuf: StringBuilder,
                                encodedBuf: ByteBuffer,
                                decodedCharBuf: CharBuffer,
@@ -129,7 +129,7 @@ private fun handleEncodedBytes(outputBuf: StringBuilder,
 /**
  * Must only be called when the input encoded bytes buffer is empty
  */
-@Throws(MalformedInputException::class, UnmappableCharacterException::class)
+@Throws(IllegalArgumentException::class, IllegalStateException::class)
 private fun flush(outputBuf: StringBuilder, decodedCharBuf: CharBuffer, charsetDecoder: CharsetDecoder) {
     decodedCharBuf.clear()
 
@@ -152,14 +152,13 @@ private fun appendDecodedChars(outputBuf: StringBuilder, decodedCharBuf: CharBuf
  * Throws if the given [CoderResult] is considered an error.
  *
  * @throws IllegalStateException        if result is overflow
- * @throws MalformedInputException      if result represents malformed input
- * @throws UnmappableCharacterException if result represents an unmappable character
+ * @throws IllegalArgumentException     if result represents malformed input or an unmappable character
  */
-@Throws(MalformedInputException::class, UnmappableCharacterException::class)
+@Throws(IllegalArgumentException::class, IllegalStateException::class)
 fun CoderResult.throwIfError(ignoreOverflow: Boolean = false) {
     when {
         !ignoreOverflow && isOverflow -> throw IllegalStateException("Byte buffer overflow; this should not happen.")
-        isMalformed                   -> throw MalformedInputException(length())
-        isUnmappable                  -> throw UnmappableCharacterException(length())
+        isMalformed                   -> throw IllegalArgumentException("Malformed input")
+        isUnmappable                  -> throw IllegalArgumentException("Unmappable character")
     }
 }
