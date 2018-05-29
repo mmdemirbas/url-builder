@@ -160,7 +160,6 @@ fun parseUrl(input: String, charset: Charset = Charsets.UTF_8): Url {
                     else       -> Query.Unstructured(decode(queryParams, charset))
                 }
             }
-        //            unstructuredQuery != null && unstructuredQuery.isNotEmpty() -> Query.Unstructured(decode(unstructuredQuery))
             else                     -> null
         }
         token = queryToken
