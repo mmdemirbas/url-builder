@@ -5,19 +5,19 @@ import org.junit.Test
 import java.util.*
 import kotlin.text.Charsets.UTF_8
 
-class PercentDecoderTest {
+class DecodeTest {
     @Test
-    fun testDecodesWithoutPercents() {
+    fun decodesWithoutPercents() {
         assert("asdf" == decode("asdf"))
     }
 
     @Test
-    fun testDecodeSingleByte() {
+    fun decodeSingleByte() {
         assert("#" == decode("%23"))
     }
 
     @Test
-    fun testIncompletePercentPairNoNumbers() {
+    fun incompletePercentPairNoNumbers() {
         try {
             decode("%")
             Assert.fail()
@@ -27,7 +27,7 @@ class PercentDecoderTest {
     }
 
     @Test
-    fun testIncompletePercentPairOneNumber() {
+    fun incompletePercentPairOneNumber() {
         try {
             decode("%2")
             Assert.fail()
@@ -37,7 +37,7 @@ class PercentDecoderTest {
     }
 
     @Test
-    fun testInvalidHex() {
+    fun invalidHex() {
         try {
             decode("%xz")
             Assert.fail()
@@ -47,7 +47,7 @@ class PercentDecoderTest {
     }
 
     @Test
-    fun testRandomStrings() {
+    fun randomStrings() {
         val rand = Random()
 
         val seed = rand.nextLong()
