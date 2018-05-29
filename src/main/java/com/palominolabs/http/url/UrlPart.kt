@@ -90,8 +90,8 @@ open class UrlPart(val safeChars: String) {
                 !Character.isHighSurrogate(c) -> {
                 }
                 input.length <= i + 1         -> {
-                    throw IllegalArgumentException("Invalid UTF-16: The last character in the input string was a high surrogate (\\u" + Integer.toHexString(
-                            c.toInt()) + ")")
+                    val high = Integer.toHexString(c.toInt())
+                    throw IllegalArgumentException("Invalid UTF-16: The last character in the input string was a high surrogate (\\u$high)")
                 }
                 else                          -> {
                     // get the low surrogate as well
@@ -102,9 +102,9 @@ open class UrlPart(val safeChars: String) {
                             i++
                         }
                         else                                   -> {
-                            throw IllegalArgumentException("Invalid UTF-16: Char $i is a high surrogate (\\u${c.toInt().toString(
-                                    16)}), but char ${i + 1} is not a low surrogate (\\u${lowSurrogate.toInt().toString(
-                                    16)})")
+                            val high = c.toInt().toString(16)
+                            val low = lowSurrogate.toInt().toString(16)
+                            throw IllegalArgumentException("Invalid UTF-16: Char $i is a high surrogate (\\u$high), but char ${i + 1} is not a low surrogate (\\u$low)")
                         }
                     }
                 }

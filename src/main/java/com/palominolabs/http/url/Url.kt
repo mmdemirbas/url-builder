@@ -7,7 +7,6 @@ package com.palominolabs.http.url
 import java.net.URL
 import java.nio.charset.Charset
 import java.util.*
-import java.util.regex.Pattern
 
 /**
  * Url in `scheme://host:port/path/path/path?query#fragment` format.
@@ -49,100 +48,6 @@ sealed class Query {
      * that query.
      */
     data class Unstructured(val query: String) : Query()
-}
-
-private val h = escapeRegexSpecialChars("%" + UrlPart.RegName.safeChars)
-private val p = escapeRegexSpecialChars("%" + UrlPart.Path.safeChars)
-private val m = escapeRegexSpecialChars("%" + UrlPart.Matrix.safeChars)
-private val q = escapeRegexSpecialChars("%" + UrlPart.QueryParam.safeChars)
-private val u = escapeRegexSpecialChars("%" + UrlPart.UnstructuredQuery.safeChars)
-private val f = escapeRegexSpecialChars("%" + UrlPart.Fragment.safeChars)
-
-private fun escapeRegexSpecialChars(chars: String) =
-        chars.replace(Regex("([\\^\\$\\+\\{\\}\\[\\]\\*\\(\\)\\?\\.\\-])"), "\\\\$1")
-
-private val URL_PATTERN =
-        Pattern.compile("(?<scheme>\\w+)://(?<host>[$h]+)(:(?<port>\\d+))?(?<path>(/[$p]*(;[$m]+=[$m]+)*;?)*)/?(\\?((?<queryParams>[$q]+=[$q]+(&[$q]+=[$q]+)*)|(?<unstructuredQuery>[$u]+)))?(#(?<fragment>[$f]+))?")
-
-/**
- * Decodes percent-encoded (%XX) Unicode text.
- *
- * @param input Input with %-encoded representation of characters in this instance's configured character set, e.g.
- * "%20" for a space character
- * @param initialEncodedByteBufSize Initial size of buffer that holds encoded bytes
- * @param decodedCharBufSize        Size of buffer that encoded bytes are decoded into
- * @param charsetDecoder            Charset to decode bytes into chars with
- *
- * @return Corresponding string with %-encoded data decoded and converted to their corresponding characters
- *
- * @throws IllegalArgumentException if decoder is configured to report errors and malformed input is detected or an unmappable character is detected
- */
-@Throws(IllegalArgumentException::class)
-fun parseUrl(input: String): Url {
-    val (scheme, schemeToken, schemeRest) = input.splitIntoTwoParts("://")
-    val (host, hostToken, hostRest) = schemeRest.splitIntoTwoParts(":#/;?".toCharArray())
-    val hostOrPortRest: String
-    val port: Int?
-    if (hostToken == ':') {
-        val (portStr, portToken, portRest) = hostRest.splitIntoTwoParts("#/;?".toCharArray())
-        port = when {
-            portStr.isEmpty() -> null
-            else              -> portStr.toInt()
-        }
-        hostOrPortRest = portRest
-    } else {
-        port = null
-        hostOrPortRest = hostRest
-    }
-    val (pathStr, pathToken, pathRest) = hostOrPortRest.splitIntoTwoParts("#?".toCharArray())
-    val path = pathStr.split('/').filter { it.isNotEmpty() }.map { pathSegment ->
-        val chunks = pathSegment.split(';')
-        PathSegment(decode(chunks.first()), chunks.drop(1).filter { it.isNotEmpty() }.map { matrixChunk ->
-            val parts = matrixChunk.split('=')
-            if (parts.size != 2) throw IllegalArgumentException("Malformed matrix param: <$matrixChunk>")
-            decode(parts[0]) to decode(parts[1])
-        })
-    }
-    val fragment: String?
-    val query: Query?
-    if (pathToken == '?') {
-        val (queryParams, queryToken, queryRest) = pathRest.splitIntoTwoParts("#".toCharArray())
-        query = when {
-            queryParams.isNotEmpty() -> {
-                val chunks = queryParams.split('&')
-                val splittedChunks = chunks.map { it.split('=') }
-                val structured = splittedChunks.all { it.size == 2 }
-                when {
-                    structured -> Query.Structured(splittedChunks.map { decode(it[0]) to decode(it[1]) })
-                    else       -> Query.Unstructured(decode(queryParams))
-                }
-            }
-        //            unstructuredQuery != null && unstructuredQuery.isNotEmpty() -> Query.Unstructured(decode(unstructuredQuery))
-            else                     -> null
-        }
-        fragment = if (queryToken == '#') decode(queryRest) else null
-    } else {
-        query = null
-        fragment = if (pathToken == '#') decode(pathRest) else null
-    }
-
-    return Url(scheme = scheme, host = decode(host), port = port, path = path, query = query, fragment = fragment)
-}
-
-private fun String.splitIntoTwoParts(delimiter: String): Triple<String, String?, String> {
-    val index = indexOf(delimiter)
-    return when {
-        index < 0 -> Triple(this, null, "")
-        else      -> Triple(this.substring(0, index), delimiter, this.substring(index + delimiter.length))
-    }
-}
-
-private fun String.splitIntoTwoParts(delimiters: CharArray): Triple<String, Char?, String> {
-    val index = indexOfAny(delimiters)
-    return when {
-        index < 0 -> Triple(this, null, "")
-        else      -> Triple(this.substring(0, index), this[index], this.substring(index + 1))
-    }
 }
 
 /**
@@ -200,6 +105,93 @@ fun parseUrl(url: URL, charset: Charset = Charsets.UTF_8): Url {
 }
 
 /**
+ * Decodes percent-encoded (%XX) Unicode text.
+ *
+ * @param input Input with %-encoded representation of characters in this instance's configured character set, e.g.
+ * "%20" for a space character
+ * @param initialEncodedByteBufSize Initial size of buffer that holds encoded bytes
+ * @param decodedCharBufSize        Size of buffer that encoded bytes are decoded into
+ * @param charsetDecoder            Charset to decode bytes into chars with
+ *
+ * @return Corresponding string with %-encoded data decoded and converted to their corresponding characters
+ *
+ * @throws IllegalArgumentException if decoder is configured to report errors and malformed input is detected or an unmappable character is detected
+ */
+@Throws(IllegalArgumentException::class)
+fun parseUrl(input: String, charset: Charset = Charsets.UTF_8): Url {
+    val (scheme, schemeToken, schemeRest) = input.splitIntoTwoParts("://")
+    val (host, hostToken, hostRest) = schemeRest.splitIntoTwoParts(":#/;?".toCharArray())
+    val hostOrPortRest: String
+    val port: Int?
+    if (hostToken == ':') {
+        val (portStr, portToken, portRest) = hostRest.splitIntoTwoParts("#/;?".toCharArray())
+        port = when {
+            portStr.isEmpty() -> null
+            else              -> portStr.toInt()
+        }
+        hostOrPortRest = portRest
+    } else {
+        port = null
+        hostOrPortRest = hostRest
+    }
+    val (pathStr, pathToken, pathRest) = hostOrPortRest.splitIntoTwoParts("#?".toCharArray())
+    val path = pathStr.split('/').filter { it.isNotEmpty() }.map { pathSegment ->
+        val chunks = pathSegment.split(';')
+        PathSegment(decode(chunks.first(), charset), chunks.drop(1).filter { it.isNotEmpty() }.map { matrixChunk ->
+            val parts = matrixChunk.split('=')
+            if (parts.size != 2) throw IllegalArgumentException("Malformed matrix param: <$matrixChunk>")
+            decode(parts[0], charset) to decode(parts[1], charset)
+        })
+    }
+    val query: Query?
+    val token: Char?
+    val rest: String
+    if (pathToken == '?') {
+        val (queryParams, queryToken, queryRest) = pathRest.splitIntoTwoParts("#".toCharArray())
+        query = when {
+            queryParams.isNotEmpty() -> {
+                val chunks = queryParams.split('&')
+                val splittedChunks = chunks.map { it.split('=') }
+                val structured = splittedChunks.all { it.size == 2 }
+                when {
+                    structured -> Query.Structured(splittedChunks.map {
+                        decode(it[0], charset) to decode(it[1], charset)
+                    })
+                    else       -> Query.Unstructured(decode(queryParams, charset))
+                }
+            }
+        //            unstructuredQuery != null && unstructuredQuery.isNotEmpty() -> Query.Unstructured(decode(unstructuredQuery))
+            else                     -> null
+        }
+        token = queryToken
+        rest = queryRest
+    } else {
+        query = null
+        token = pathToken
+        rest = pathRest
+    }
+    val fragment = if (token == '#') decode(rest, charset) else null
+
+    return Url(scheme = scheme, host = decode(host), port = port, path = path, query = query, fragment = fragment)
+}
+
+private fun String.splitIntoTwoParts(delimiter: String): Triple<String, String?, String> {
+    val index = indexOf(delimiter)
+    return when {
+        index < 0 -> Triple(this, null, "")
+        else      -> Triple(this.substring(0, index), delimiter, this.substring(index + delimiter.length))
+    }
+}
+
+private fun String.splitIntoTwoParts(delimiters: CharArray): Triple<String, Char?, String> {
+    val index = indexOfAny(delimiters)
+    return when {
+        index < 0 -> Triple(this, null, "")
+        else      -> Triple(this.substring(0, index), this[index], this.substring(index + 1))
+    }
+}
+
+/**
  * Encode the current builder state into a URL string.
  *
  * Escaping rules are from RFC 3986, RFC 1738 and the HTML 4 spec (http://www.w3.org/TR/html401/interact/forms.html#form-content-type).
@@ -216,8 +208,10 @@ fun Url.toUrlString(forceTrailingSlash: Boolean = false): String {
     // host encoded as in RFC 3986 section 3.2.2
     val hostEncoded = when {
         IPV4_PATTERN.matches(host) || IPV6_PATTERN.matches(host) -> host
-    // if it's a reg-name, it MUST be encoded as UTF-8 (regardless of the rest of the URL)
-        else                                                     -> UrlPart.RegName.encode(host)
+        else                                                     -> {
+            // if it's a reg-name, it MUST be encoded as UTF-8 (regardless of the rest of the URL)
+            UrlPart.RegName.encode(host)
+        }
     }
 
     val buf = StringBuilder("$scheme://$hostEncoded")
