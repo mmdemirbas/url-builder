@@ -9,36 +9,41 @@ private const val commonSafeChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ
  *
  * @param safeChars the set of chars to NOT encode
  */
-open class UrlPart(val safeChars: String) {
+open class UrlComponent(val safeChars: String) {
+    object Scheme : UrlComponent("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+-.")
+    object Authority : UrlComponent("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~!$&'()*+,;=:@")
+    object UserInfo : UrlComponent("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~!$&'()*+,;=:")
+    object Port : UrlComponent("0123456789")
+
     /**
      * RFC 3986 'reg-name'. This is not very aggressive... it's quite possible to have DNS-illegal names out of this.
      * Regardless, it will at least be URI-compliant even if it's not HTTP URL-compliant.
      */
-    object RegName : UrlPart("$commonSafeChars&+=;")
+    object RegName : UrlComponent("$commonSafeChars&+=;")
 
     /**
      * Represents RFC 3986 'pchar'. Remove delimiter that starts matrix section.
      */
-    object Path : UrlPart("$commonSafeChars@:&+=")
+    object Path : UrlComponent("$commonSafeChars@:&+=")
 
     /**
      * Remove delims for HTTP matrix params as per RFC 1738 S3.3. The other reserved chars ('/' and '?') are already excluded.
      */
-    object Matrix : UrlPart("$commonSafeChars@:&+")
+    object Matrix : UrlComponent("$commonSafeChars@:&+")
 
     /**
      * At this point it represents RFC 3986 'query'. http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4.1 also
      * specifies that "+" can mean space in a query, so we will make sure to say that '+' is not safe to leave as-is
      */
-    object UnstructuredQuery : UrlPart("$commonSafeChars@:&=;/?")
+    object UnstructuredQuery : UrlComponent("$commonSafeChars@:&=;/?")
 
     /**
      * Create more stringent requirements for HTML4 queries: remove delimiters for HTML query params so that key=value
      * pairs can be used.
      */
-    object QueryParam : UrlPart("$commonSafeChars@:;/?")
+    object QueryParam : UrlComponent("$commonSafeChars@:;/?")
 
-    object Fragment : UrlPart("$commonSafeChars@:&+=;/?")
+    object Fragment : UrlComponent("$commonSafeChars@:&+=;/?")
 
 
     val safeCharSet = BitSet().apply { safeChars.forEach { set(it.toInt()) } }

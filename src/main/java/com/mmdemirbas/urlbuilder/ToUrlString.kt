@@ -18,9 +18,9 @@ fun Url.toUrlString(forceTrailingSlash: Boolean = false): String {
     // host encoded as in RFC 3986 section 3.2.2
     val hostEncoded = when {
         IPV4_PATTERN.matches(host) || IPV6_PATTERN.matches(host) -> host
-        else                                                                                                         -> {
+        else                                                     -> {
             // if it's a reg-name, it MUST be encoded as UTF-8 (regardless of the rest of the URL)
-            UrlPart.RegName.encode(host)
+            UrlComponent.RegName.encode(host)
         }
     }
 
@@ -29,10 +29,10 @@ fun Url.toUrlString(forceTrailingSlash: Boolean = false): String {
 
     path.forEach { pathSegment ->
         buf.append('/')
-        buf.append(UrlPart.Path.encode(pathSegment.segment))
+        buf.append(UrlComponent.Path.encode(pathSegment.segment))
         buf.append(pathSegment.matrixParams.joinToString("") { (name, value) ->
-            val nameEncoded = UrlPart.Matrix.encode(name)
-            val valueEncoded = UrlPart.Matrix.encode(value)
+            val nameEncoded = UrlComponent.Matrix.encode(name)
+            val valueEncoded = UrlComponent.Matrix.encode(value)
             ";$nameEncoded=$valueEncoded"
         })
     }
@@ -43,20 +43,20 @@ fun Url.toUrlString(forceTrailingSlash: Boolean = false): String {
         is Query.Structured   -> {
             buf.append("?")
             buf.append(query.params.joinToString("&") { (name, value) ->
-                val nameEncoded = UrlPart.QueryParam.encode(name)
-                val valueEncoded = UrlPart.QueryParam.encode(value)
+                val nameEncoded = UrlComponent.QueryParam.encode(name)
+                val valueEncoded = UrlComponent.QueryParam.encode(value)
                 "$nameEncoded=$valueEncoded"
             })
         }
         is Query.Unstructured -> {
             buf.append("?")
-            buf.append(UrlPart.UnstructuredQuery.encode(query.query))
+            buf.append(UrlComponent.UnstructuredQuery.encode(query.query))
         }
     }
 
     if (fragment != null) {
         buf.append('#')
-        buf.append(UrlPart.Fragment.encode(fragment))
+        buf.append(UrlComponent.Fragment.encode(fragment))
     }
 
     return buf.toString()

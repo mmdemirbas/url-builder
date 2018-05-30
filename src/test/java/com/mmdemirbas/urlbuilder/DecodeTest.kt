@@ -54,7 +54,7 @@ object DecodeTest {
 
             try {
                 decodedBytes =
-                        decode(com.mmdemirbas.urlbuilder.UrlPart.UnstructuredQuery.encode(buf.toString())).toByteArray(
+                        decode(com.mmdemirbas.urlbuilder.UrlComponent.UnstructuredQuery.encode(buf.toString())).toByteArray(
                                 UTF_8)
             } catch (e: IllegalArgumentException) {
                 val charHex = (0 until buf.toString().length).map { Integer.toHexString(buf.toString()[it].toInt()) }

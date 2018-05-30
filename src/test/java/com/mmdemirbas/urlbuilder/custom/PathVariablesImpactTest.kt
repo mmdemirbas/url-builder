@@ -1,6 +1,6 @@
 package com.mmdemirbas.urlbuilder.custom
 
-import com.mmdemirbas.urlbuilder.UrlPart
+import com.mmdemirbas.urlbuilder.UrlComponent
 import com.mmdemirbas.urlbuilder.encode
 import org.junit.jupiter.api.Test
 
@@ -36,7 +36,7 @@ class PathVariablesImpactTest {
 
     private fun report(values: Collection<String>) {
         val distinct = values.distinct()
-        val valueToEncoded = distinct.associate { it to UrlPart.Path.encode(it) }
+        val valueToEncoded = distinct.associate { it to UrlComponent.Path.encode(it) }
         val notChanged = valueToEncoded.filter { (raw, encoded) -> raw == encoded }
         val changed = valueToEncoded.filter { (raw, encoded) -> raw != encoded }
 

@@ -18,7 +18,7 @@ object EncodeTest {
     @MethodSource("cases")
     fun Case.encode() {
         assertEquals(expected,
-                     UrlPart("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789").encode(input, charset))
+                     UrlComponent("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789").encode(input, charset))
     }
 
     fun cases() = listOf(Case("doesn't encode safe chars", "abcd%2B%2D%2A%2F", "abcd+-*/"),

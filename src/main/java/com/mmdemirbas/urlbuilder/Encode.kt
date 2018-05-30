@@ -22,7 +22,7 @@ import java.nio.charset.UnmappableCharacterException
  * detected
  */
 @Throws(MalformedInputException::class, UnmappableCharacterException::class)
-fun UrlPart.encode(input: CharSequence, charset: Charset = Charsets.UTF_8): String {
+fun UrlComponent.encode(input: CharSequence, charset: Charset = Charsets.UTF_8): String {
     val builder = StringBuilder(input.length)
     val charsetEncoder =
             charset.newEncoder().onMalformedInput(CodingErrorAction.REPLACE)
