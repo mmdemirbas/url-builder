@@ -1,6 +1,5 @@
-package com.palominolabs.http.url
+package com.mmdemirbas.urlbuilder
 
-import org.junit.Assert.assertEquals
 import org.junit.jupiter.api.Test
 
 /**
@@ -8,18 +7,6 @@ import org.junit.jupiter.api.Test
  * @since 2018-05-25 14:17
  */
 class PathVariablesImpactTest {
-    @Test
-    fun `slash in the path segment`() {
-        val url =
-                Url(scheme = "https",
-                    host = "localhost",
-                    path = listOf(PathSegment("schedules"), PathSegment("21/5"), PathSegment("delete")))
-        val urlString = "https://localhost/schedules/21%2F5/delete"
-
-        assertEquals(urlString, url.toUrlString())
-        assertEquals(url, parseUrl(url.toUrlString()))
-    }
-
     @Test
     fun `report encoding impact`() {
         val files = (0..46).map { "/$it.csv" }

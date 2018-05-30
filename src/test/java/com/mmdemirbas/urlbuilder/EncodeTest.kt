@@ -2,9 +2,9 @@
  * Copyright (c) 2012 Palomino Labs, Inc.
  */
 
-package com.palominolabs.http.url
+package com.mmdemirbas.urlbuilder
 
-import org.junit.Assert.assertEquals
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -27,11 +27,19 @@ object EncodeTest {
             // 1 UTF-16 char (unicode snowman)
                          Case("encodeUtf8", "snowman%E2%98%83", "snowman\u2603"),
             // musical G clef: 1d11e, has to be represented in surrogate pair form
-                         Case("encodeUtf8SurrogatePair", "clef%F0%9D%84%9E", "clef\ud834\udd1e"),
+                         Case("encodeUtf8SurrogatePair",
+                                                                   "clef%F0%9D%84%9E",
+                                                                   "clef\ud834\udd1e"),
             // 1 UTF-16 char (unicode snowman)
-                         Case("encodeUtf16", "snowman%26%03", "snowman\u2603", UTF_16BE),
+                         Case("encodeUtf16",
+                                                                   "snowman%26%03",
+                                                                   "snowman\u2603",
+                                                                   UTF_16BE),
             // musical G clef: 1d11e, has to be represented in surrogate pair form
-                         Case("urlEncodedUtf16SurrogatePair", "clef%D8%34%DD%1E", "clef\ud834\udd1e", UTF_16BE))
+                         Case("urlEncodedUtf16SurrogatePair",
+                                                                   "clef%D8%34%DD%1E",
+                                                                   "clef\ud834\udd1e",
+                                                                   UTF_16BE))
 
     data class Case(val name: String, val expected: String, val input: String, val charset: Charset = UTF_8)
 }

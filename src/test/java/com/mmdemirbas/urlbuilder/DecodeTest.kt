@@ -1,7 +1,7 @@
-package com.palominolabs.http.url
+package com.mmdemirbas.urlbuilder
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.fail
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
@@ -17,17 +17,23 @@ object DecodeTest {
 
     @ParameterizedTest
     @MethodSource("throwingCases")
-    fun Case.decodeThrows() = expectThrows<IllegalArgumentException>(expected) { decode(input) }
+    fun Case.decodeThrows() =
+            expectThrows<IllegalArgumentException>(expected) {
+                decode(input)
+            }
 
-    fun okCases() = listOf(Case("decodesWithoutPercents", "asdf", "asdf"), Case("decodeSingleByte", "#", "%23"))
+    fun okCases() = listOf(Case("decodesWithoutPercents", "asdf", "asdf"),
+                           Case("decodeSingleByte", "#", "%23"))
 
     fun throwingCases() = listOf(Case("incompletePercentPairNoNumbers",
-                                      "Could not percent decode <%>: incomplete %-pair at position 0",
-                                      "%"),
+                                                                           "Could not percent decode <%>: incomplete %-pair at position 0",
+                                                                           "%"),
                                  Case("incompletePercentPairOneNumber",
-                                      "Could not percent decode <%2>: incomplete %-pair at position 0",
-                                      "%2"),
-                                 Case("invalidHex", "Invalid %-tuple <%xz>", "%xz"))
+                                                                           "Could not percent decode <%2>: incomplete %-pair at position 0",
+                                                                           "%2"),
+                                 Case("invalidHex",
+                                                                           "Invalid %-tuple <%xz>",
+                                                                           "%xz"))
 
     data class Case(val name: String, val expected: String, val input: String)
 
@@ -51,13 +57,14 @@ object DecodeTest {
             }
 
             try {
-                decodedBytes = decode(UrlPart.UnstructuredQuery.encode(buf.toString())).toByteArray(UTF_8)
+                decodedBytes = decode(com.mmdemirbas.urlbuilder.UrlPart.UnstructuredQuery.encode(
+                        buf.toString())).toByteArray(UTF_8)
             } catch (e: IllegalArgumentException) {
                 val charHex = (0 until buf.toString().length).map { Integer.toHexString(buf.toString()[it].toInt()) }
-                fail("seed: $seed code points: $codePointsHex chars $charHex ${e.message}")
+                fail<Nothing>("seed: $seed code points: $codePointsHex chars $charHex ${e.message}")
             }
 
-            assertEquals("Seed: $seed Code points: $codePointsHex", origBytes.toHex(), decodedBytes!!.toHex())
+            assertEquals(origBytes.toHex(), decodedBytes!!.toHex(), "Seed: $seed Code points: $codePointsHex")
         }
     }
 

@@ -1,13 +1,10 @@
-/*
- * Copyright (c) 2012 Palomino Labs, Inc.
- */
-
-package com.palominolabs.http.url
+package com.mmdemirbas.urlbuilder
 
 import java.nio.ByteBuffer
 import java.nio.CharBuffer
 import java.nio.charset.Charset
 import java.nio.charset.CoderResult
+
 
 /**
  * Decodes percent-encoded (%XX) Unicode text.

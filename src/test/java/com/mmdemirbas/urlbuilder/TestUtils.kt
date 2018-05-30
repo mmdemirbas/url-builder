@@ -1,4 +1,4 @@
-package com.palominolabs.http.url
+package com.mmdemirbas.urlbuilder
 
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.assertThrows

@@ -1,4 +1,4 @@
-package com.palominolabs.http.url
+package com.mmdemirbas.urlbuilder
 
 
 import org.junit.jupiter.api.Test
@@ -44,8 +44,8 @@ class EchoController {
 
 @SpringApplicationConfiguration(classes = [(Application::class)])
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class EchoControllerTest {
-    val mockMvc = MockMvcBuilders.standaloneSetup(EchoController()).build()!!
+class SpringBootTest {
+    private val mockMvc = MockMvcBuilders.standaloneSetup(EchoController()).build()!!
 
     @Test
     fun `context loads`() = Unit
@@ -53,7 +53,7 @@ class EchoControllerTest {
     @ParameterizedTest
     @ValueSource(strings = arrayOf("/test"))
     fun `not found`(path: String) {
-        path returns NOT_FOUND
+        path.returns(NOT_FOUND)
     }
 
     @ParameterizedTest
@@ -62,10 +62,11 @@ class EchoControllerTest {
         path.returns(OK).andExpect(content().string(expected))
     }
 
-    fun okCases() = listOf(Case("/test/echo", "test"), Case("/test/echo?query=param", "test"))
+    fun okCases() = listOf(Case("/test/echo", "test"),
+                           Case("/test/echo?query=param", "test"))
 
     data class Case(val path: String, val expected: String)
 
-    private infix fun String.returns(expected: HttpStatus) =
+    private fun String.returns(expected: HttpStatus) =
             mockMvc.perform(get(this)).andExpect(status().`is`(expected.value())).andDo(print())
 }
