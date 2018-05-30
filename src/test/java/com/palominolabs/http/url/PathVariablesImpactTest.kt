@@ -1,7 +1,7 @@
 package com.palominolabs.http.url
 
 import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 /**
  * @author Muhammed Demirbaş
@@ -9,7 +9,7 @@ import org.junit.Test
  */
 class PathVariablesImpactTest {
     @Test
-    fun `specific case test`() {
+    fun `slash in the path segment`() {
         val url =
                 Url(scheme = "https",
                     host = "localhost",
