@@ -18,18 +18,10 @@ object ParseUrlTest {
         }
     }
 
-    fun cases() = listOf(Case("percentDecodeInvalidPair",
-                                                                     "Invalid %-tuple <%2o>",
-                                                                     "http://foo.com/fo%2o"),
-                         Case("percentDecodeInvalidPair2",
-                                                                     "Invalid %-tuple <%2o>",
-                                                                     "http://foo.com/fo%2o"),
-                         Case("fromUrlWithMalformedMatrixPair",
-                                                                     "Malformed matrix param: <m1=v1=v2>",
-                                                                     "http://foo.com/foo;m1=v1=v2"),
-                         Case("fromUrlWithMalformedMatrixPair2",
-                                                                     "Malformed matrix param: <m1=v1=v2>",
-                                                                     "http://foo.com/foo;m1=v1=v2"))
+    fun cases() = listOf(Case("invalid hex pair", "Invalid %-tuple <%2o>", "http://foo.com/fo%2o"),
+                         Case("malformed matrix pair",
+                              "Malformed matrix param: <m1=v1=v2>",
+                              "http://foo.com/foo;m1=v1=v2"))
 
     data class Case(val name: String, val expectedMessage: String, val input: String)
 }

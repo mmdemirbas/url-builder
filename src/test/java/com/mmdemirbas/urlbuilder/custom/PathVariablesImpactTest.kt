@@ -1,5 +1,7 @@
-package com.mmdemirbas.urlbuilder
+package com.mmdemirbas.urlbuilder.custom
 
+import com.mmdemirbas.urlbuilder.UrlPart
+import com.mmdemirbas.urlbuilder.encode
 import org.junit.jupiter.api.Test
 
 /**

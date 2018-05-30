@@ -1,4 +1,4 @@
-package com.mmdemirbas.urlbuilder
+package com.mmdemirbas.urlbuilder.custom
 
 
 import org.junit.jupiter.api.Test
@@ -37,7 +37,7 @@ open class Application {
 @RestController
 @EnableAutoConfiguration
 class EchoController {
-    @RequestMapping("/{value}/echo")
+    @RequestMapping("/p/{value}/s")
     fun echo(@PathVariable value: String) = value
 }
 
@@ -51,21 +51,32 @@ class SpringBootTest {
     fun `context loads`() = Unit
 
     @ParameterizedTest
-    @ValueSource(strings = arrayOf("/test"))
+    @ValueSource(strings = arrayOf("/p", "/p/test", "/p/test/c"))
     fun `not found`(path: String) {
         path.returns(NOT_FOUND)
     }
 
     @ParameterizedTest
-    @MethodSource("okCases")
+    @MethodSource("OK cases")
     fun Case.ok() {
         path.returns(OK).andExpect(content().string(expected))
     }
 
-    fun okCases() = listOf(Case("/test/echo", "test"),
-                           Case("/test/echo?query=param", "test"))
+    fun `OK cases`() = listOf(Case("simple", "/p/abc/s", "abc"),
+                              Case("case-sensitivity", "/p/aBc/s", "aBc"),
+                              Case("query params", "/p/abc/s?query=param", "abc"),
+                              Case("matrix params after prefix", "/p;a=1/abc/s", "abc"),
+                              Case("matrix params after path variable", "/p/abc;a=1/s", "abc"),
+                              Case("matrix params after suffix", "/p/abc/s;a=1", "abc")
+                              , Case("space - not encoded", "/p/a c/s", "a c")
+                              , Case("space - encoded", "/p/a%20c/s", "a c")
 
-    data class Case(val path: String, val expected: String)
+                              , Case("plus - not encoded", "/p/a+c/s", "a+c")
+                              , Case("plus - encoded", "/p/a%2Fc/s", "a+c")
+
+                              )
+
+    data class Case(val name: String, val path: String, val expected: String)
 
     private fun String.returns(expected: HttpStatus) =
             mockMvc.perform(get(this)).andExpect(status().`is`(expected.value())).andDo(print())

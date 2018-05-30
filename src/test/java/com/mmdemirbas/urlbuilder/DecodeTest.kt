@@ -12,28 +12,24 @@ import kotlin.text.Charsets.UTF_8
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 object DecodeTest {
     @ParameterizedTest
-    @MethodSource("okCases")
+    @MethodSource("OK cases")
     fun Case.decode() = assert(expected == decode(input))
 
     @ParameterizedTest
-    @MethodSource("throwingCases")
-    fun Case.decodeThrows() =
-            expectThrows<IllegalArgumentException>(expected) {
-                decode(input)
-            }
+    @MethodSource("throwing cases")
+    fun Case.decodeThrows() = expectThrows<IllegalArgumentException>(expected) {
+        decode(input)
+    }
 
-    fun okCases() = listOf(Case("decodesWithoutPercents", "asdf", "asdf"),
-                           Case("decodeSingleByte", "#", "%23"))
+    fun `OK cases`() = listOf(Case("decodes without percents", "asdf", "asdf"), Case("decodeSingleByte", "#", "%23"))
 
-    fun throwingCases() = listOf(Case("incompletePercentPairNoNumbers",
-                                                                           "Could not percent decode <%>: incomplete %-pair at position 0",
-                                                                           "%"),
-                                 Case("incompletePercentPairOneNumber",
-                                                                           "Could not percent decode <%2>: incomplete %-pair at position 0",
-                                                                           "%2"),
-                                 Case("invalidHex",
-                                                                           "Invalid %-tuple <%xz>",
-                                                                           "%xz"))
+    fun `throwing cases`() = listOf(Case("incomplete percent pair without numbers",
+                                         "Could not percent decode <%>: incomplete %-pair at position 0",
+                                         "%"),
+                                    Case("incomplete percent pair with single number",
+                                         "Could not percent decode <%2>: incomplete %-pair at position 0",
+                                         "%2"),
+                                    Case("invalidHex", "Invalid %-tuple <%xz>", "%xz"))
 
     data class Case(val name: String, val expected: String, val input: String)
 
@@ -57,8 +53,9 @@ object DecodeTest {
             }
 
             try {
-                decodedBytes = decode(com.mmdemirbas.urlbuilder.UrlPart.UnstructuredQuery.encode(
-                        buf.toString())).toByteArray(UTF_8)
+                decodedBytes =
+                        decode(com.mmdemirbas.urlbuilder.UrlPart.UnstructuredQuery.encode(buf.toString())).toByteArray(
+                                UTF_8)
             } catch (e: IllegalArgumentException) {
                 val charHex = (0 until buf.toString().length).map { Integer.toHexString(buf.toString()[it].toInt()) }
                 fail<Nothing>("seed: $seed code points: $codePointsHex chars $charHex ${e.message}")
