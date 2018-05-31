@@ -1,8 +1,11 @@
 package com.mmdemirbas.urlbuilder
 
+import com.mmdemirbas.urlbuilder.UrlPart.*
+import java.nio.charset.Charset
+
 
 /**
- * Encode the current builder state into a URL string.
+ * Returns string representation of the [Url] escaping unsafe characters properly.
  *
  * Escaping rules are from RFC 3986, RFC 1738 and the HTML 4 spec (http://www.w3.org/TR/html401/interact/forms.html#form-content-type).
  * This means that this diverges from the canonical URI/URL rules for the sake of being what you want to actually make
@@ -11,16 +14,17 @@ package com.mmdemirbas.urlbuilder
  * @param forceTrailingSlash true to force the generated URL to have a trailing slash at the end of the path
  *
  * @return a well-formed URL string
- * @throws IllegalArgumentException if character encoding fails and the encoder is configured to report errors
+ *
+ * @throws IllegalArgumentException if character encoding fails
  */
 @Throws(IllegalArgumentException::class)
-fun Url.toUrlString(forceTrailingSlash: Boolean = false): String {
+fun Url.toUrlString(charset: Charset = Charsets.UTF_8, forceTrailingSlash: Boolean = false): String {
     // host encoded as in RFC 3986 section 3.2.2
     val hostEncoded = when {
         IPV4_PATTERN.matches(host) || IPV6_PATTERN.matches(host) -> host
         else                                                     -> {
             // if it's a reg-name, it MUST be encoded as UTF-8 (regardless of the rest of the URL)
-            UrlComponent.RegName.encode(host)
+            RegName.encode(host)
         }
     }
 
@@ -29,10 +33,10 @@ fun Url.toUrlString(forceTrailingSlash: Boolean = false): String {
 
     path.forEach { pathSegment ->
         buf.append('/')
-        buf.append(UrlComponent.Path.encode(pathSegment.segment))
+        buf.append(Path.encode(pathSegment.segment, charset))
         buf.append(pathSegment.matrixParams.joinToString("") { (name, value) ->
-            val nameEncoded = UrlComponent.Matrix.encode(name)
-            val valueEncoded = UrlComponent.Matrix.encode(value)
+            val nameEncoded = Matrix.encode(name, charset)
+            val valueEncoded = Matrix.encode(value, charset)
             ";$nameEncoded=$valueEncoded"
         })
     }
@@ -40,23 +44,23 @@ fun Url.toUrlString(forceTrailingSlash: Boolean = false): String {
     if (forceTrailingSlash) buf.append('/')
 
     when (query) {
-        is Query.Structured   -> {
+        is Query.Html4        -> {
             buf.append("?")
             buf.append(query.params.joinToString("&") { (name, value) ->
-                val nameEncoded = UrlComponent.QueryParam.encode(name)
-                val valueEncoded = UrlComponent.QueryParam.encode(value)
+                val nameEncoded = QueryParam.encode(name, charset)
+                val valueEncoded = QueryParam.encode(value, charset)
                 "$nameEncoded=$valueEncoded"
             })
         }
         is Query.Unstructured -> {
             buf.append("?")
-            buf.append(UrlComponent.UnstructuredQuery.encode(query.query))
+            buf.append(UnstructuredQuery.encode(query.query, charset))
         }
     }
 
     if (fragment != null) {
         buf.append('#')
-        buf.append(UrlComponent.Fragment.encode(fragment))
+        buf.append(Fragment.encode(fragment, charset))
     }
 
     return buf.toString()

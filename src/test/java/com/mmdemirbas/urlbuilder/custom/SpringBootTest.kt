@@ -1,10 +1,12 @@
 package com.mmdemirbas.urlbuilder.custom
 
 
-import com.mmdemirbas.urlbuilder.UrlComponent
+import com.mmdemirbas.urlbuilder.UrlPart
 import com.mmdemirbas.urlbuilder.encode
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -31,7 +33,7 @@ class EchoController {
 
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class SpringBootTest {
+object SpringBootTest {
     private val context = SpringApplication.run(Application::class.java)
     private val port = context.environment.getProperty("local.server.port").toInt()
 
@@ -59,19 +61,25 @@ class SpringBootTest {
     @MethodSource("encoding cases")
     fun Case.`encoding cases`() = test(port)
 
-    fun `encoding cases`() =
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~!$'()*,&+=:@".flatMap { c ->
-                listOf(Case("'$c' not-encoded", "/$c/z", ok(c)), Case("'$c' encoded", "/${encode(c)}/z", ok(c)))
-            } + "?;".map { c ->
-                Case("'$c' encoded", "/${encode(c)}/z", ok(c))
-            } + "/".flatMap { c ->
-                listOf(Case("'$c' not-encoded", "/$c/z", notFound),
-                       Case("'$c' encoded", "/${encode(c)}/z", Response(400)),
-                       Case("'$c' double-encoded", "/${encode(encode(c))}/z", ok(encode(c))))
-            }
+    fun `encoding cases`(): List<Case> {
+        return "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_~!$'()*,&+=:@?;".map { encoded(it) } + "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_~!$'()*,&+=:@".map {
+            notEncoded(it)
+        } + notEncoded('/', notFound) + encoded('/', Response(400)) + Case("'/' double-encoded",
+                                                                           "/${encode(encode('/'))}/z",
+                                                                           ok(encode('/')))
+    }
+
+    @Disabled
+    @Test
+    fun `dot test`() {
+        TODO("not implemented")
+    }
+
+    private fun encoded(c: Char, expected: Response = ok(c)) = Case("'$c' encoded", "/${encode(c)}/z", expected)
+    private fun notEncoded(c: Char, expected: Response = ok(c)) = Case("'$c' not-encoded", "/$c/z", expected)
 
     private fun encode(c: Char) = encode(c.toString())
-    private fun encode(s: String) = UrlComponent.Path.encode(s)
+    private fun encode(s: String) = UrlPart.Path.encode(s)
 
     data class Case(val name: String, val path: String, val expected: Response) {
         fun test(port: Int) {
@@ -98,9 +106,7 @@ data class Request(val host: String = "localhost",
                 print("\r\n")
                 flush()
             }
-            val response = socket.inputStream.bufferedReader().readText()
-            println(response)
-            Response(response)
+            Response(socket.inputStream.bufferedReader().readText())
         }
     }
 }

@@ -16,10 +16,7 @@ import java.net.URL
 object RoundTripTest {
     @Test
     fun `slash in the path segment`() {
-        val url =
-                Url(scheme = "https",
-                    host = "localhost",
-                    path = listOf(PathSegment("schedules"), PathSegment("21/5"), PathSegment("delete")))
+        val url = Url("https", "localhost", PathSegment("schedules"), PathSegment("21/5"), PathSegment("delete"))
         val urlString = "https://localhost/schedules/21%2F5/delete"
 
         assertEquals(urlString, url.toUrlString())
