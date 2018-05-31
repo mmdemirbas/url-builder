@@ -16,24 +16,19 @@ import kotlin.text.Charsets.UTF_8
 object EncodeTest {
     @ParameterizedTest
     @MethodSource("cases")
-    fun Case.encode() {
+    fun TestCase.encode() {
         assertEquals(expected,
-                     UrlPart("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789").encode(input,
-                                                                                                      charset))
+                     input.encodePercent(SafeChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"),
+                                         charset))
     }
 
-    fun cases() = listOf(Case("doesn't encode safe chars", "abcd%2B%2D%2A%2F", "abcd+-*/"),
-                         Case("non-safe between safe", "abc%20123", "abc 123"),
-                         Case("safe between non-safe", "%20abc%20", " abc "),
-                         Case("utf8 - single utf16 char", "snowman%E2%98%83", "snowman\u2603"),
-                         Case("utf8 - musical G clef: 1d11e, has to be represented in surrogate pair form",
-                              "clef%F0%9D%84%9E",
-                              "clef\ud834\udd1e"),
-                         Case("utf16 - single utf16 char", "snowman%26%03", "snowman\u2603", UTF_16BE),
-                         Case("utf16 - musical G clef: 1d11e, has to be represented in surrogate pair form",
-                              "clef%D8%34%DD%1E",
-                              "clef\ud834\udd1e",
-                              UTF_16BE))
+    fun cases() = listOf(TestCase("abcd+-*/", "abcd%2B%2D%2A%2F"),
+                         TestCase("abc 123", "abc%20123"),
+                         TestCase(" abc ", "%20abc%20"),
+                         TestCase("snowman\u2603", "snowman%E2%98%83"),
+                         TestCase("clef\ud834\udd1e", "clef%F0%9D%84%9E"),
+                         TestCase("snowman\u2603", "snowman%26%03", UTF_16BE),
+                         TestCase("clef\ud834\udd1e", "clef%D8%34%DD%1E", UTF_16BE))
 
-    data class Case(val name: String, val expected: String, val input: String, val charset: Charset = UTF_8)
+    data class TestCase(val input: String, val expected: String, val charset: Charset = UTF_8)
 }

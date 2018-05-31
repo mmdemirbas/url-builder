@@ -1,6 +1,6 @@
 package com.mmdemirbas.urlbuilder
 
-import com.mmdemirbas.urlbuilder.UrlPart.*
+import com.mmdemirbas.urlbuilder.SafeChars.*
 import java.nio.charset.Charset
 
 
@@ -17,14 +17,13 @@ import java.nio.charset.Charset
  *
  * @throws IllegalArgumentException if character encoding fails
  */
-@Throws(IllegalArgumentException::class)
 fun Url.toUrlString(charset: Charset = Charsets.UTF_8, forceTrailingSlash: Boolean = false): String {
     // host encoded as in RFC 3986 section 3.2.2
     val hostEncoded = when {
         IPV4_PATTERN.matches(host) || IPV6_PATTERN.matches(host) -> host
         else                                                     -> {
             // if it's a reg-name, it MUST be encoded as UTF-8 (regardless of the rest of the URL)
-            RegName.encode(host)
+            host.encodePercent(RegName)
         }
     }
 
@@ -33,10 +32,10 @@ fun Url.toUrlString(charset: Charset = Charsets.UTF_8, forceTrailingSlash: Boole
 
     path.forEach { pathSegment ->
         buf.append('/')
-        buf.append(Path.encode(pathSegment.segment, charset))
+        buf.append(pathSegment.segment.encodePercent(Path, charset))
         buf.append(pathSegment.matrixParams.joinToString("") { (name, value) ->
-            val nameEncoded = Matrix.encode(name, charset)
-            val valueEncoded = Matrix.encode(value, charset)
+            val nameEncoded = name.encodePercent(Matrix, charset)
+            val valueEncoded = value.encodePercent(Matrix, charset)
             ";$nameEncoded=$valueEncoded"
         })
     }
@@ -47,20 +46,20 @@ fun Url.toUrlString(charset: Charset = Charsets.UTF_8, forceTrailingSlash: Boole
         is Query.Html4        -> {
             buf.append("?")
             buf.append(query.params.joinToString("&") { (name, value) ->
-                val nameEncoded = QueryParam.encode(name, charset)
-                val valueEncoded = QueryParam.encode(value, charset)
+                val nameEncoded = name.encodePercent(QueryParam, charset)
+                val valueEncoded = value.encodePercent(QueryParam, charset)
                 "$nameEncoded=$valueEncoded"
             })
         }
         is Query.Unstructured -> {
             buf.append("?")
-            buf.append(UnstructuredQuery.encode(query.query, charset))
+            buf.append(query.query.encodePercent(UnstructuredQuery, charset))
         }
     }
 
     if (fragment != null) {
         buf.append('#')
-        buf.append(Fragment.encode(fragment, charset))
+        buf.append(fragment.encodePercent(Fragment, charset))
     }
 
     return buf.toString()

@@ -1,6 +1,5 @@
 package com.mmdemirbas.urlbuilder
 
-import com.mmdemirbas.urlbuilder.util.expectThrows
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.Test
@@ -14,25 +13,19 @@ import kotlin.text.Charsets.UTF_8
 object DecodeTest {
     @ParameterizedTest
     @MethodSource("OK cases")
-    fun Case.decode() = assert(expected == decode(input))
+    fun TestCase.decode() = assert(expected == input.decodePercent())
+
+    fun `OK cases`() = listOf(TestCase("asdf", "asdf"), TestCase("%23", "#"))
 
     @ParameterizedTest
     @MethodSource("throwing cases")
-    fun Case.decodeThrows() = expectThrows<IllegalArgumentException>(expected) {
-        decode(input)
-    }
+    fun TestCase.decodeThrows() = expectThrows<IllegalArgumentException>(expected) { input.decodePercent() }
 
-    fun `OK cases`() = listOf(Case("decodes without percents", "asdf", "asdf"), Case("decodeSingleByte", "#", "%23"))
+    fun `throwing cases`() = listOf(TestCase("%", "Could not percent decode <%>: incomplete %-pair at position 0"),
+                                    TestCase("%2", "Could not percent decode <%2>: incomplete %-pair at position 0"),
+                                    TestCase("%xz", "Invalid %-tuple <%xz>"))
 
-    fun `throwing cases`() = listOf(Case("incomplete percent pair without numbers",
-                                         "Could not percent decode <%>: incomplete %-pair at position 0",
-                                         "%"),
-                                    Case("incomplete percent pair with single number",
-                                         "Could not percent decode <%2>: incomplete %-pair at position 0",
-                                         "%2"),
-                                    Case("invalidHex", "Invalid %-tuple <%xz>", "%xz"))
-
-    data class Case(val name: String, val expected: String, val input: String)
+    data class TestCase(val input: String, val expected: String)
 
     @Test
     fun `random strings`() {
@@ -55,8 +48,8 @@ object DecodeTest {
 
             try {
                 decodedBytes =
-                        decode(com.mmdemirbas.urlbuilder.UrlPart.UnstructuredQuery.encode(buf.toString())).toByteArray(
-                                UTF_8)
+                        buf.toString().encodePercent(com.mmdemirbas.urlbuilder.SafeChars.UnstructuredQuery)
+                            .decodePercent().toByteArray(UTF_8)
             } catch (e: IllegalArgumentException) {
                 val charHex = (0 until buf.toString().length).map { Integer.toHexString(buf.toString()[it].toInt()) }
                 fail<Nothing>("seed: $seed code points: $codePointsHex chars $charHex ${e.message}")

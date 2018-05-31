@@ -1,17 +1,19 @@
-package com.mmdemirbas.urlbuilder.util
+package com.mmdemirbas.urlbuilder
 
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.assertThrows
 import java.io.PrintWriter
 import java.net.Socket
 
-/**
- * @author Muhammed Demirbaş
- * @since 2018-05-31 13:45
- */
+
 data class HttpRequest(val host: String = "localhost",
                        val port: Int = 80,
                        val method: String = "GET",
                        val path: String = "/",
                        val httpVersion: String = "HTTP/1.0") {
+    /**
+     * Performs the request using low-level socket operations.
+     */
     fun exec(): HttpResponse {
         return Socket(host, port).use { socket ->
             // no auto-flushing
@@ -26,7 +28,14 @@ data class HttpRequest(val host: String = "localhost",
     }
 }
 
+
 data class HttpResponse(val status: Int, val content: String = "") {
     constructor(response: String) : this(response.split(' ', limit = 3)[1].toInt(),
                                          response.split("\r\n\r\n", limit = 2)[1])
+}
+
+
+inline fun <reified T : Throwable> expectThrows(expectedMessage: String, noinline code: () -> Any) {
+    val ex = assertThrows<T> { code() }
+    Assertions.assertEquals(expectedMessage, ex.message)
 }

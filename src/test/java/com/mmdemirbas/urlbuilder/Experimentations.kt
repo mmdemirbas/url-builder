@@ -1,7 +1,5 @@
-package com.mmdemirbas.urlbuilder.custom
+package com.mmdemirbas.urlbuilder
 
-import com.mmdemirbas.urlbuilder.UrlPart
-import com.mmdemirbas.urlbuilder.encode
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
@@ -9,7 +7,7 @@ import org.junit.jupiter.api.Test
  * @author Muhammed Demirbaş
  * @since 2018-05-25 14:17
  */
-class PathVariablesImpactTest {
+class Experimentations {
     @Disabled("not an actual test")
     @Test
     fun `report encoding impact`() {
@@ -38,7 +36,7 @@ class PathVariablesImpactTest {
 
     private fun report(values: Collection<String>) {
         val distinct = values.distinct()
-        val valueToEncoded = distinct.associate { it to UrlPart.Path.encode(it) }
+        val valueToEncoded = distinct.associate { it to it.encodePercent(SafeChars.Path) }
         val notChanged = valueToEncoded.filter { (raw, encoded) -> raw == encoded }
         val changed = valueToEncoded.filter { (raw, encoded) -> raw != encoded }
 

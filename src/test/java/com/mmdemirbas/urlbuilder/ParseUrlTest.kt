@@ -1,6 +1,5 @@
 package com.mmdemirbas.urlbuilder
 
-import com.mmdemirbas.urlbuilder.util.expectThrows
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -10,19 +9,13 @@ import java.net.URL
 object ParseUrlTest {
     @ParameterizedTest
     @MethodSource("cases")
-    fun Case.parseUrl() {
-        expectThrows<IllegalArgumentException>(expectedMessage) {
-            parseUrl(input)
-        }
-        expectThrows<IllegalArgumentException>(expectedMessage) {
-            parseUrl(URL(input))
-        }
+    fun TestCase.parseUrl() {
+        expectThrows<IllegalArgumentException>(expected) { input.toUrl() }
+        expectThrows<IllegalArgumentException>(expected) { URL(input).toUrl() }
     }
 
-    fun cases() = listOf(Case("invalid hex pair", "Invalid %-tuple <%2o>", "http://foo.com/fo%2o"),
-                         Case("malformed matrix pair",
-                              "Malformed matrix param: <m1=v1=v2>",
-                              "http://foo.com/foo;m1=v1=v2"))
+    fun cases() = listOf(TestCase("http://foo.com/fo%2o", "Invalid %-tuple <%2o>"),
+                         TestCase("http://foo.com/foo;m1=v1=v2", "Malformed matrix param: <m1=v1=v2>"))
 
-    data class Case(val name: String, val expectedMessage: String, val input: String)
+    data class TestCase(val input: String, val expected: String)
 }
