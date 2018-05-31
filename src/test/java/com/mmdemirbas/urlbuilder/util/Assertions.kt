@@ -1,4 +1,4 @@
-package com.mmdemirbas.urlbuilder
+package com.mmdemirbas.urlbuilder.util
 
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.assertThrows

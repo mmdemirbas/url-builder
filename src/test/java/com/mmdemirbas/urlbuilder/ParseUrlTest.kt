@@ -1,5 +1,6 @@
 package com.mmdemirbas.urlbuilder
 
+import com.mmdemirbas.urlbuilder.util.expectThrows
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource

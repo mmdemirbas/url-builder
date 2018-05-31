@@ -1,5 +1,6 @@
 package com.mmdemirbas.urlbuilder
 
+import com.mmdemirbas.urlbuilder.util.expectThrows
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.Test
