@@ -1,4 +1,4 @@
-# Spring-allowed characters for paths & path variable values
+# Spring MVC safe characters for URL paths & path variable values
 
 This file summarizes results of [SpringTest](SpringTest.kt).
 
@@ -13,8 +13,9 @@ This file summarizes results of [SpringTest](SpringTest.kt).
 
 - Spring can NOT handle dot character as expected, because it gives
   the dot character special meaning and truncates the string starting
-  from the last dot character. Suggested solutions can not resolve all
-  cases, and complicates the code. So, PREVENT DOT IN PATH SEGMENTS.
+  from the last dot character.
+  [Suggested solution](https://www.mkyong.com/spring-mvc/spring-mvc-pathvariable-dot-get-truncated/)
+  can not resolve all cases, and complicates the code.
 
 - Spring can handle most unsafe characters even if they not encoded:
 
@@ -33,14 +34,16 @@ This file summarizes results of [SpringTest](SpringTest.kt).
 
 - Spring can NOT handle back and forward slashes even if they are encoded,
   and returns `400 BAD REQUEST`. May be an intentional behaviour because
-  of security considerations:
+   of security considerations. BTW,
+  [An ugly solution](https://stackoverflow.com/a/2335449/471214)
+  is possible.
 
     ```
     /\
     ```
 
 
-## Conclusion
+## Conclusions
 
 - **Encode URL's in client code:** For HTTP-spec compatibility,
   you should always encode path segments (and other URL components)

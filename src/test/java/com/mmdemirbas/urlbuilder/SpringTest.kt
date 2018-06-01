@@ -539,22 +539,20 @@ object SpringTest {
      * Tests various characters used as path segments.
      */
     @ParameterizedTest
-    @MethodSource("character encoding cases")
-    fun TestCase.`character encoding cases`() = test()
+    @MethodSource("other characters")
+    fun TestCase.`other characters`() = test()
 
-    fun `character encoding cases`(): List<TestCase> {
-        // todo: buradaki encoding forceful olmalı
+    fun `other characters`(): List<TestCase> {
         val canEncode = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_~!$'()*,=:@".explode()
         val shouldEncode = "çöğüşÇÖĞÜŞİı\"é<>£^#½§{[]}|@∑€®₺¥üiöπ¨æß∂ƒğ^∆¬´æ`<>|Ω≈√∫~≤≥÷".explode()
         val mustEncodeInPath = "?;".explode() // changes url structure - starter for query & matrix params
         val mustEncodeInQuery = "&+".explode()
-        // .%/\ characters have their own tests
         return forceEncodeOptional(canEncode + shouldEncode) + forceEncodeInPath(mustEncodeInPath) + forceEncodeInQuery(
                 mustEncodeInQuery)
     }
+    private fun String.explode() = toCharArray().map(Char::toString)
 }
 
-private fun String.explode() = toCharArray().map(Char::toString)
 
 
 // mini-DSL for writing test cases
