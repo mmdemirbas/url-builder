@@ -56,3 +56,8 @@ URL encoding is also not something that can be done once you've formed a complet
 # Building
 
 Run `./gradlew build`.
+
+# Todo
+
+1. Setup JMH
+2. Publish artifacts & update build link
