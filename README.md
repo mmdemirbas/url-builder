@@ -57,6 +57,13 @@ URL encoding is also not something that can be done once you've formed a complet
 
 Run `./gradlew build`.
 
+# Spring URL handling behaviour
+
+URL handling behaviour of Spring MVC tested with
+[SpringTest.kt](src/test/java/com/mmdemirbas/urlbuilder/SpringTest.kt)
+and results summarized
+[here](src/test/java/com/mmdemirbas/urlbuilder/SpringTest.md).
+
 # Todo
 
 1. Setup JMH

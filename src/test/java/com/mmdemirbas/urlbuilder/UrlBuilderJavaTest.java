@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.mmdemirbas.urlbuilder.UrlBuilder.pair;
 
-class UrlBuilderTest {
+class UrlBuilderJavaTest {
     @Test
     void sample() {
         Assertions.assertEquals(
