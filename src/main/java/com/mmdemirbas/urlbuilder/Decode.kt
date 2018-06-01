@@ -9,6 +9,7 @@ import java.nio.charset.Charset
  *
  * @throws IllegalArgumentException if malformed input detected
  */
+@JvmOverloads
 fun String.decodePercent(charset: Charset = Charsets.UTF_8): String {
     val bos = ByteArrayOutputStream(length)
     var i = 0

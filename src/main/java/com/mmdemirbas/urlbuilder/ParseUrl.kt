@@ -3,7 +3,7 @@ package com.mmdemirbas.urlbuilder
 import java.net.URL
 import java.nio.charset.Charset
 
-
+@JvmOverloads
 fun URL.toUrl(charset: Charset = Charsets.UTF_8): Url {
     return Url(protocol,
                host.decodePercent(Charsets.UTF_8),
@@ -13,6 +13,7 @@ fun URL.toUrl(charset: Charset = Charsets.UTF_8): Url {
                ref?.let { ref.decodePercent(charset) })
 }
 
+@JvmOverloads
 fun String.toUrl(charset: Charset = Charsets.UTF_8): Url {
     val (scheme, _, schemeRest) = splitBy("://")
     val (host, hostToken, hostRest) = schemeRest.splitByAny(":#/;?")
@@ -41,9 +42,11 @@ fun String.toUrl(charset: Charset = Charsets.UTF_8): Url {
                fragment = fragment)
 }
 
+@JvmOverloads
 fun String.toPathSegments(charset: Charset = Charsets.UTF_8) =
         orEmpty().split('/').filterNot { it.isEmpty() }.map { it.toPathSegment(charset) }
 
+@JvmOverloads
 fun String.toPathSegment(charset: Charset = Charsets.UTF_8): PathSegment {
     val chunks = split(';')
     return PathSegment(chunks.first().decodePercent(charset),
@@ -56,6 +59,7 @@ fun String.toPathSegment(charset: Charset = Charsets.UTF_8): PathSegment {
                        })
 }
 
+@JvmOverloads
 fun String.toQuery(charset: Charset = Charsets.UTF_8) = when {
     isEmpty() -> null
     else      -> {

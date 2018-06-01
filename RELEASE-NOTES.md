@@ -1,11 +1,18 @@
-- 1.1.1
+- _mmdemirbas/url-builder_ - forked
+    - Convert to Kotlin
+    - Remove 3rd-party compile-time dependencies
+    - Upgrade to JUnit 5
+    - Transform mutable classes to immutable data classes
+    - Refactor, simplify, shorten, improve code
+    - Add tests for Spring URL handling behaviour
+- _palominolabs/url-builder_ - 1.1.1
     - Performance tuning
     - Allow unstructured HTTP query (not in `key=value&key=value` form)
     - Switch to releasing artifacts on Bintray
-- 1.1.0
+- _palominolabs/url-builder_ - 1.1.0
     - Expose PercentEncoder as public
     - Allow initializing a UrlBuilder from a `java.net.URL`
-- 1.0.2
+- _palominolabs/url-builder_ - 1.0.2
     - Java 6 compatible
-- 1.0.1
+- _palominolabs/url-builder_ - 1.0.1
     - Matrix params specified per path segment

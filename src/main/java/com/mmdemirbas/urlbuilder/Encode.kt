@@ -57,6 +57,7 @@ open class SafeChars(val safeChars: String) {
  *
  * @throws IllegalArgumentException if malformed input detected
  */
+@JvmOverloads
 fun String.encodePercent(safeChars: SafeChars, charset: Charset = Charsets.UTF_8): String {
     val builder = StringBuilder(length)
     var i = 0
@@ -87,6 +88,7 @@ fun String.encodePercent(safeChars: SafeChars, charset: Charset = Charsets.UTF_8
 /**
  * Encodes all chars as a sequence of hex-encoded bytes such as `/` -> `%2F`.
  */
+@JvmOverloads
 fun String.forceEncodePercent(charset: Charset = Charsets.UTF_8): String {
     val builder = StringBuilder(length * 3)
     val bytes = charset.encode(this)!!

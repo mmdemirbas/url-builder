@@ -17,6 +17,7 @@ import java.nio.charset.Charset
  *
  * @throws IllegalArgumentException if character encoding fails
  */
+@JvmOverloads
 fun Url.toUrlString(charset: Charset = Charsets.UTF_8, forceTrailingSlash: Boolean = false): String {
     // host encoded as in RFC 3986 section 3.2.2
     val hostEncoded = when {
