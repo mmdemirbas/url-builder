@@ -5,6 +5,7 @@
     - Transform mutable classes to immutable data classes
     - Refactor, simplify, shorten, improve code
     - Add tests for Spring URL handling behaviour
+    - Improve `UrlBuilder` method names to clarify add vs. set
 - _palominolabs/url-builder_ - 1.1.1
     - Performance tuning
     - Allow unstructured HTTP query (not in `key=value&key=value` form)
