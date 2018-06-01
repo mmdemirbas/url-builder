@@ -1,5 +1,6 @@
 package com.mmdemirbas.urlbuilder
 
+import com.mmdemirbas.urlbuilder.SafeChars.UnstructuredQuery
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.Test
@@ -47,9 +48,7 @@ object DecodeTest {
             }
 
             try {
-                decodedBytes =
-                        buf.toString().encodePercent(com.mmdemirbas.urlbuilder.SafeChars.UnstructuredQuery)
-                            .decodePercent().toByteArray(UTF_8)
+                decodedBytes = buf.toString().encodePercent(UnstructuredQuery).decodePercent().toByteArray(UTF_8)
             } catch (e: IllegalArgumentException) {
                 val charHex = (0 until buf.toString().length).map { Integer.toHexString(buf.toString()[it].toInt()) }
                 fail<Nothing>("seed: $seed code points: $codePointsHex chars $charHex ${e.message}")

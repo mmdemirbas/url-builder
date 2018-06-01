@@ -9,14 +9,14 @@ Artifacts are released in [Bintray](https://bintray.com/). For gradle, use the `
 Add this to the `dependencies` block in your `build.gradle`:
 
 ```groovy
-compile 'com.palominolabs.http:url-builder:VERSION'
+compile 'com.mmdemirbas:url-builder:VERSION'
 ```
 
 where `VERSION` is the latest released version.  If you're using Maven, know that your life could be greatly improved by switching to Gradle and use this dependency block:
 
 ```xml
 <dependency>
-    <groupId>com.palominolabs.http</groupId>
+    <groupId>com.mmdemirbas</groupId>
     <artifactId>url-builder</artifactId>
     <version>VERSION</version>
 </dependency>
@@ -25,15 +25,17 @@ where `VERSION` is the latest released version.  If you're using Maven, know tha
 # Example
 
 ```java
+import com.mmdemirbas.urlbuilder.UrlBuilder;
+import static com.mmdemirbas.urlbuilder.UrlBuilder.pair;
+
 // showcase the different encoding rules used on different URL components
-UrlBuilder.forHost("http", "foo.com")
-    .pathSegment("with spaces")
-    .pathSegments("path", "with", "varArgs")
-    .pathSegment("&=?/")
-    .queryParam("fancy + name", "fancy?=value")
-    .matrixParam("matrix", "param?")
-    .fragment("#?=")
-    .toUrlString()
+UrlBuilder.from("http", "foo.com")
+          .addPath("with spaces")
+          .addPaths("path", "with", "varArgs")
+          .addPath("&=?/", pair("matrix", "param?"))
+          .setQuery(pair("fancy + name", "fancy?=value"))
+          .setFragment("#?=")
+          .buildUrlString());
 
 // produces:
 // http://foo.com/with%20spaces/path/with/varArgs/&=%3F%2F;matrix=param%3F?fancy%20%2B%20name=fancy?%3Dvalue#%23?=
@@ -41,7 +43,7 @@ UrlBuilder.forHost("http", "foo.com")
 
 # Motivation
 
-See [this blog post](http://blog.palominolabs.com/2013/10/03/creating-urls-correctly-and-safely/) for a thorough explanation.
+See [this blog post](http://blog.palominolabs.com/2013/10/03/creating-urls-correctly-and-safely/) for a through explanation.
 
 Ideally, the Java SDK would provide a good way to build properly encoded URLs. Unfortunately, it does not.
 
