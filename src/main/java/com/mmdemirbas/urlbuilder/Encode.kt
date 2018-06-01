@@ -76,16 +76,23 @@ fun String.encodePercent(safeChars: SafeChars, charset: Charset = Charsets.UTF_8
                     !Character.isLowSurrogate(low)   -> throw IllegalArgumentException("Invalid UTF-16: Char $i is a high surrogate (\\u${high.toHex()}), but char at ${i + 1} is not a low surrogate (\\u${low.toHex()})")
                     else                             -> 2
                 }
-
-                val slice = substring(i, i + count)
-                val bytes = charset.encode(slice)!!
-                while (bytes.hasRemaining()) {
-                    val b = bytes.get().toInt()
-                    builder.append("%" + "0123456789ABCDEF"[b shr 4 and 0xF] + "0123456789ABCDEF"[b and 0xF])
-                }
+                builder.append(substring(i, i + count).forceEncodePercent(charset))
                 i += count
             }
         }
+    }
+    return builder.toString()
+}
+
+/**
+ * Encodes all chars as a sequence of hex-encoded bytes such as `/` -> `%2F`.
+ */
+fun String.forceEncodePercent(charset: Charset = Charsets.UTF_8): String {
+    val builder = StringBuilder(length * 3)
+    val bytes = charset.encode(this)!!
+    while (bytes.hasRemaining()) {
+        val b = bytes.get().toInt()
+        builder.append("%" + "0123456789ABCDEF"[b shr 4 and 0xF] + "0123456789ABCDEF"[b and 0xF])
     }
     return builder.toString()
 }

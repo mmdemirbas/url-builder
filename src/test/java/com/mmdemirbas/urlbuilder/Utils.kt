@@ -6,25 +6,21 @@ import java.io.PrintWriter
 import java.net.Socket
 
 
-data class HttpRequest(val host: String = "localhost",
-                       val port: Int = 80,
-                       val method: String = "GET",
-                       val path: String = "/",
-                       val httpVersion: String = "HTTP/1.0") {
+data class HttpRequest(val host: String = "localhost", val port: Int = 80, val path: String = "/") {
+    val requestLine = "GET $path HTTP/1.0"
+
     /**
-     * Performs the request using low-level socket operations.
+     * Performs a GET request using only low-level socket operations. (no 3rd-party library)
      */
-    fun exec(): HttpResponse {
-        return Socket(host, port).use { socket ->
-            // no auto-flushing
-            PrintWriter(socket.outputStream, false).run {
-                // native line endings are uncertain so add them manually
-                print("$method $path $httpVersion\r\n")
-                print("\r\n")
-                flush()
-            }
-            HttpResponse(socket.inputStream.bufferedReader().readText())
+    fun get() = Socket(host, port).use { socket ->
+        // no auto-flushing
+        PrintWriter(socket.outputStream, false).run {
+            // native line endings are uncertain so add them manually
+            print("$requestLine\r\n")
+            print("\r\n")
+            flush()
         }
+        HttpResponse(socket.inputStream.bufferedReader().readText())
     }
 }
 
