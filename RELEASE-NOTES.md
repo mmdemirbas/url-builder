@@ -1,4 +1,4 @@
-- _mmdemirbas/url-builder_ - forked
+- _mmdemirbas/url-builder_ - forked - 1.0-SNAPSHOT
     - Convert to Kotlin
     - Remove 3rd-party compile-time dependencies
     - Upgrade to JUnit 5
@@ -6,6 +6,7 @@
     - Refactor, simplify, shorten, improve code
     - Add tests for Spring URL handling behaviour
     - Improve `UrlBuilder` method names to clarify add vs. set
+    - Add badges for build status, test coverage, code quality etc.
 - _palominolabs/url-builder_ - 1.1.1
     - Performance tuning
     - Allow unstructured HTTP query (not in `key=value&key=value` form)

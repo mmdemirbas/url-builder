@@ -1,6 +1,18 @@
 Use this library to safely create valid, correctly encoded URL strings with a fluent API.
 
-[![Build Status](https://semaphoreci.com/api/v1/projects/d30d48ce-7476-40e3-ad56-7536be27f6bb/317247/badge.svg)](https://semaphoreci.com/marshallpierce/url-builder)
+[![codecov](https://codecov.io/gh/mmdemirbas/url-builder/branch/master/graph/badge.svg)](https://codecov.io/gh/mmdemirbas/url-builder)
+[![Codecov](https://img.shields.io/codecov/c/github/mmdemirbas/url-builder.svg)](https://codecov.io/gh/mmdemirbas/url-builder)
+
+[![Travis](https://api.travis-ci.org/mmdemirbas/url-builder.svg)](https://travis-ci.org/mmdemirbas/url-builder)
+[![Travis](https://img.shields.io/travis/mmdemirbas/url-builder.svg)](https://travis-ci.org/mmdemirbas/url-builder)
+
+[![Build Status](https://semaphoreci.com/api/v1/mmdemirbas/url-builder/branches/master/badge.svg)](https://semaphoreci.com/mmdemirbas/url-builder)
+[![Project Status: Active The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+
+[![Scrutinizer](https://img.shields.io/scrutinizer/g/mmdemirbas/url-builder.svg)](https://scrutinizer-ci.com/g/mmdemirbas/url-builder/)
+[![Scrutinizer Coverage](https://img.shields.io/scrutinizer/coverage/g/mmdemirbas/url-builder.svg)](https://scrutinizer-ci.com/g/mmdemirbas/url-builder/)
+[![Scrutinizer Build](https://img.shields.io/scrutinizer/build/g/mmdemirbas/url-builder.svg)](https://scrutinizer-ci.com/g/mmdemirbas/url-builder)
+
 
 # Usage
 
@@ -23,6 +35,8 @@ where `VERSION` is the latest released version.  If you're using Maven, know tha
 ```
 
 # Example
+
+# todo: add example of other factory methods
 
 ```java
 import com.mmdemirbas.urlbuilder.UrlBuilder;
