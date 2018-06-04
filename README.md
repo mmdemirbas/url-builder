@@ -25,7 +25,7 @@ Code quality:
 Use the `jcenter()` repository and add:
 
 ```groovy
-compile 'com.mmdemirbas:url-builder:1.0'
+compile 'com.mmdemirbas:url-builder:1.0.0'
 ```
 
 
@@ -36,7 +36,7 @@ To configure JCenter repo, [go here](https://bintray.com/bintray/jcenter) and cl
 <dependency>
     <groupId>com.mmdemirbas</groupId>
     <artifactId>url-builder</artifactId>
-    <version>1.0</version>
+    <version>1.0.0</version>
 </dependency>
 ```
 
