@@ -13,6 +13,8 @@ Use this library to safely create valid, correctly encoded URL strings with a fl
 [![Scrutinizer Coverage](https://img.shields.io/scrutinizer/coverage/g/mmdemirbas/url-builder.svg)](https://scrutinizer-ci.com/g/mmdemirbas/url-builder/)
 [![Scrutinizer Build](https://img.shields.io/scrutinizer/build/g/mmdemirbas/url-builder.svg)](https://scrutinizer-ci.com/g/mmdemirbas/url-builder)
 
+[![codebeat badge](https://codebeat.co/badges/50f4f4f8-0392-4371-b57c-f6de4d47f943)](https://codebeat.co/projects/github-com-mmdemirbas-url-builder-master)
+
 
 # Usage
 
@@ -80,5 +82,4 @@ and results summarized
 
 # Todo
 
-1. Setup JMH
-2. Publish artifacts & update build link
+1. Publish artifacts & update build link
