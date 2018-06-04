@@ -1,18 +1,17 @@
 Use this library to safely create valid, correctly encoded URL strings with a fluent API.
 
-[![codecov](https://codecov.io/gh/mmdemirbas/url-builder/branch/master/graph/badge.svg)](https://codecov.io/gh/mmdemirbas/url-builder)
-[![Codecov](https://img.shields.io/codecov/c/github/mmdemirbas/url-builder.svg)](https://codecov.io/gh/mmdemirbas/url-builder)
+[![Project Status: Active The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 
 [![Travis](https://api.travis-ci.org/mmdemirbas/url-builder.svg)](https://travis-ci.org/mmdemirbas/url-builder)
 [![Travis](https://img.shields.io/travis/mmdemirbas/url-builder.svg)](https://travis-ci.org/mmdemirbas/url-builder)
-
+[![Scrutinizer Build](https://img.shields.io/scrutinizer/build/g/mmdemirbas/url-builder.svg)](https://scrutinizer-ci.com/g/mmdemirbas/url-builder)
 [![Build Status](https://semaphoreci.com/api/v1/mmdemirbas/url-builder/branches/master/badge.svg)](https://semaphoreci.com/mmdemirbas/url-builder)
-[![Project Status: Active The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+
+[![codecov](https://codecov.io/gh/mmdemirbas/url-builder/branch/master/graph/badge.svg)](https://codecov.io/gh/mmdemirbas/url-builder)
+[![Codecov](https://img.shields.io/codecov/c/github/mmdemirbas/url-builder.svg)](https://codecov.io/gh/mmdemirbas/url-builder)
+[![Scrutinizer Coverage](https://img.shields.io/scrutinizer/coverage/g/mmdemirbas/url-builder.svg)](https://scrutinizer-ci.com/g/mmdemirbas/url-builder/)
 
 [![Scrutinizer](https://img.shields.io/scrutinizer/g/mmdemirbas/url-builder.svg)](https://scrutinizer-ci.com/g/mmdemirbas/url-builder/)
-[![Scrutinizer Coverage](https://img.shields.io/scrutinizer/coverage/g/mmdemirbas/url-builder.svg)](https://scrutinizer-ci.com/g/mmdemirbas/url-builder/)
-[![Scrutinizer Build](https://img.shields.io/scrutinizer/build/g/mmdemirbas/url-builder.svg)](https://scrutinizer-ci.com/g/mmdemirbas/url-builder)
-
 [![codebeat badge](https://codebeat.co/badges/50f4f4f8-0392-4371-b57c-f6de4d47f943)](https://codebeat.co/projects/github-com-mmdemirbas-url-builder-master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/7e166622f0ad4adda856da3b19fe8931)](https://www.codacy.com/app/mmdemirbas/url-builder?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mmdemirbas/url-builder&amp;utm_campaign=Badge_Grade)
 
