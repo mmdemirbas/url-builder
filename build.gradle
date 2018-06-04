@@ -5,7 +5,7 @@ plugins {
     id "jacoco"
     id "nl.fabianm.kotlin.plugin.generated" version "1.0" // annotate generated methods to exclude from coverage
     id "me.champeau.gradle.jmh" version "0.4.6"
-    id 'ru.vyarus.pom' version '1.2.0' // generate pom
+    id "maven"
 }
 
 group = 'com.mmdemirbas'
