@@ -6,7 +6,7 @@ Build:
 [![Travis](https://api.travis-ci.org/mmdemirbas/url-builder.svg)](https://travis-ci.org/mmdemirbas/url-builder)
 [![Travis](https://img.shields.io/travis/mmdemirbas/url-builder.svg)](https://travis-ci.org/mmdemirbas/url-builder)
 [![Scrutinizer Build](https://img.shields.io/scrutinizer/build/g/mmdemirbas/url-builder.svg)](https://scrutinizer-ci.com/g/mmdemirbas/url-builder)
-[![Build Status](https://semaphoreci.com/api/v1/mmdemirbas/url-builder/branches/master/badge.svg)](https://semaphoreci.com/mmdemirbas/url-builder)
+[![Build Status](https://semaphoreci.com/api/v1/mmdemirbas/url-builder/branches/master/shields_badge.svg)](https://semaphoreci.com/mmdemirbas/url-builder)
 
 Coverage:
 [![codecov](https://codecov.io/gh/mmdemirbas/url-builder/branch/master/graph/badge.svg)](https://codecov.io/gh/mmdemirbas/url-builder)
