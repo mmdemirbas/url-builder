@@ -20,27 +20,27 @@ Code quality:
 
 # Usage
 
-## TODO: release artifacts
+## Gradle
 
-Artifacts are released in [Bintray](https://bintray.com/). For gradle, use the `jcenter()` repository. For maven, [go here](https://bintray.com/bintray/jcenter) and click "Set me up".
-
-Add this to the `dependencies` block in your `build.gradle`:
+Use the `jcenter()` repository and add:
 
 ```groovy
-compile 'com.mmdemirbas:url-builder:VERSION'
+compile 'com.mmdemirbas:url-builder:1.0'
 ```
 
-where `VERSION` is the latest released version.  If you're using Maven, know that your life could be greatly improved by switching to Gradle and use this dependency block:
+
+## Maven
+To configure JCenter repo, [go here](https://bintray.com/bintray/jcenter) and click "Set me up", then add:
 
 ```xml
 <dependency>
     <groupId>com.mmdemirbas</groupId>
     <artifactId>url-builder</artifactId>
-    <version>VERSION</version>
+    <version>1.0</version>
 </dependency>
 ```
 
-# Example
+## Examples
 
 ```java
 import com.mmdemirbas.urlbuilder.UrlBuilder;
@@ -84,10 +84,6 @@ Run `./gradlew build`.
 # Spring URL handling behaviour
 
 URL handling behaviour of Spring MVC tested with
-[SpringTest.kt](src/test/java/com/mmdemirbas/urlbuilder/SpringTest.kt)
+[SpringTest.kt](src/test/kotlin/com/mmdemirbas/urlbuilder/SpringTest.kt)
 and results summarized
-[here](src/test/java/com/mmdemirbas/urlbuilder/SpringTest.md).
-
-# Todo
-
-1. Publish artifacts & update build link
+[here](src/test/kotlin/com/mmdemirbas/urlbuilder/SpringTest.md).
