@@ -3,6 +3,7 @@ buildscript { repositories { jcenter() } }
 plugins {
     id "org.jetbrains.kotlin.jvm" version "1.2.41"
     id "jacoco"
+    id "nl.fabianm.kotlin.plugin.generated" version "1.0" // annotate generated methods to exclude from coverage
     id "me.champeau.gradle.jmh" version "0.4.6"
 }
 
