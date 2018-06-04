@@ -7,7 +7,7 @@ import java.net.Socket
 
 
 data class HttpRequest(val host: String = "localhost", val port: Int = 80, val path: String = "/") {
-    val requestLine = "GET $path HTTP/1.0"
+    private val requestLine = "GET $path HTTP/1.0"
 
     /**
      * Performs a GET request using only low-level socket operations. (no 3rd-party library)

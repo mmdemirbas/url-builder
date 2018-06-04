@@ -17,21 +17,21 @@ fun URL.toUrl(charset: Charset = Charsets.UTF_8): Url {
 fun String.toUrl(charset: Charset = Charsets.UTF_8): Url {
     val (scheme, _, schemeRest) = splitBy("://")
     val (host, hostToken, hostRest) = schemeRest.splitByAny(":#/;?")
-    val (port, hostOrPortRest) = when {
-        hostToken == ':' -> {
+    val (port, hostOrPortRest) = when (hostToken) {
+        ':'  -> {
             val (portStr, _, portRest) = hostRest.splitByAny("#/;?")
             (if (portStr.isEmpty()) null else portStr.toInt()) to portRest
         }
-        else             -> null to hostRest
+        else -> null to hostRest
     }
     val (pathStr, pathToken, pathRest) = hostOrPortRest.splitByAny("#?")
     val path = pathStr.toPathSegments(charset)
-    val (query, token, rest) = when {
-        pathToken == '?' -> {
+    val (query, token, rest) = when (pathToken) {
+        '?'  -> {
             val (queryParams, queryToken, queryRest) = pathRest.splitByAny("#")
             Triple(queryParams.toQuery(charset), queryToken, queryRest)
         }
-        else             -> Triple(null, pathToken, pathRest)
+        else -> Triple(null, pathToken, pathRest)
     }
     val fragment = if (token == '#') rest.decodePercent(charset) else null
     return Url(scheme = scheme,

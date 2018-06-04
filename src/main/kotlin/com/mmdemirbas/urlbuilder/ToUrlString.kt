@@ -31,10 +31,10 @@ fun Url.toUrlString(charset: Charset = Charsets.UTF_8, forceTrailingSlash: Boole
     val buf = StringBuilder("$scheme://$hostEncoded")
     if (port != null && port >= 0) buf.append(":$port")
 
-    path.forEach { pathSegment ->
+    path.forEach { (segment, matrixParams) ->
         buf.append('/')
-        buf.append(pathSegment.segment.encodePercent(Path, charset))
-        buf.append(pathSegment.matrixParams.joinToString("") { (name, value) ->
+        buf.append(segment.encodePercent(Path, charset))
+        buf.append(matrixParams.joinToString("") { (name, value) ->
             val nameEncoded = name.encodePercent(Matrix, charset)
             val valueEncoded = value.encodePercent(Matrix, charset)
             ";$nameEncoded=$valueEncoded"

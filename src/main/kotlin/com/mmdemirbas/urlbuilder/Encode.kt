@@ -11,7 +11,7 @@ private const val commonSafeChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ
  *
  * @param safeChars the set of chars to NOT encode
  */
-open class SafeChars(val safeChars: String) {
+open class SafeChars(private val safeChars: String) {
     object Scheme : SafeChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+-.")
     object Authority : SafeChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~!$&'()*+,;=:@")
     object UserInfo : SafeChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~!$&'()*+,;=:")

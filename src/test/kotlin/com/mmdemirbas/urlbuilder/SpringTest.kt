@@ -550,9 +550,9 @@ object SpringTest {
         return forceEncodeOptional(canEncode + shouldEncode) + forceEncodeInPath(mustEncodeInPath) + forceEncodeInQuery(
                 mustEncodeInQuery)
     }
+
     private fun String.explode() = toCharArray().map(Char::toString)
 }
-
 
 
 // mini-DSL for writing test cases

@@ -74,8 +74,8 @@ object DecodeTest {
                            charBuf: CharArray,
                            rand: Random,
                            length: Int) {
-        val CODE_POINT_IN_SUPPLEMENTARY = 2
-        val CODE_POINT_IN_BMP = 1
+        val codePointInSupplementary = 2
+        val codePointInBMP = 1
 
         buf.setLength(0)
         codePoints.clear()
@@ -86,7 +86,7 @@ object DecodeTest {
             if (Character.isDefined(codePoint)) {
                 val res = Character.toChars(codePoint, charBuf, 0)
 
-                if (res == CODE_POINT_IN_BMP && (Character.isHighSurrogate(charBuf[0]) || Character.isLowSurrogate(
+                if (res == codePointInBMP && (Character.isHighSurrogate(charBuf[0]) || Character.isLowSurrogate(
                                 charBuf[0]))) {
                     // isDefined is true even if it's a standalone surrogate in the D800-DFFF range, but those are not legal
                     // single unicode code units (that is, a single char)
@@ -96,7 +96,7 @@ object DecodeTest {
                 buf.append(charBuf[0])
                 // whether it's a pair or not, we want the only char (or high surrogate)
                 codePoints.add(codePoint)
-                if (res == CODE_POINT_IN_SUPPLEMENTARY) {
+                if (res == codePointInSupplementary) {
                     // it's a surrogate pair, so we care about the second char
                     buf.append(charBuf[1])
                 }
