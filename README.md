@@ -1,5 +1,6 @@
 Use this library to safely create valid, correctly encoded URL strings with a fluent API.
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/86e380faa48c438db2fcb7be0022a2e3)](https://app.codacy.com/app/mmdemirbas/url-builder?utm_source=github.com&utm_medium=referral&utm_content=mmdemirbas/url-builder&utm_campaign=badger)
 [![codecov](https://codecov.io/gh/mmdemirbas/url-builder/branch/master/graph/badge.svg)](https://codecov.io/gh/mmdemirbas/url-builder)
 [![Codecov](https://img.shields.io/codecov/c/github/mmdemirbas/url-builder.svg)](https://codecov.io/gh/mmdemirbas/url-builder)
 
