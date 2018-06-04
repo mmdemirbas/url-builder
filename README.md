@@ -1,6 +1,7 @@
 Use this library to safely create valid, correctly encoded URL strings with a fluent API.
 
 [![Project Status: Active The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![Download](https://bintray.com/packages/mmdemirbas/mvn/url-builder/images/download.svg?version=v1.0.0)](https://bintray.com/mmdemirbas/mvn/url-builder/v1.0.0/link)
 
 Build:
 [![Travis](https://api.travis-ci.org/mmdemirbas/url-builder.svg)](https://travis-ci.org/mmdemirbas/url-builder)
