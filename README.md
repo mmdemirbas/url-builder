@@ -20,6 +20,8 @@ Code quality:
 
 # Usage
 
+## TODO: release artifacts
+
 Artifacts are released in [Bintray](https://bintray.com/). For gradle, use the `jcenter()` repository. For maven, [go here](https://bintray.com/bintray/jcenter) and click "Set me up".
 
 Add this to the `dependencies` block in your `build.gradle`:
