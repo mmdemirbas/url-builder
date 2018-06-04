@@ -37,8 +37,6 @@ where `VERSION` is the latest released version.  If you're using Maven, know tha
 
 # Example
 
-# todo: add example of other factory methods
-
 ```java
 import com.mmdemirbas.urlbuilder.UrlBuilder;
 import static com.mmdemirbas.urlbuilder.UrlBuilder.pair;
@@ -50,9 +48,15 @@ UrlBuilder.from("http", "foo.com")
           .addPath("&=?/", pair("matrix", "param?"))
           .setQuery(pair("fancy + name", "fancy?=value"))
           .setFragment("#?=")
-          .buildUrlString());
+          .toUrlString());
 
-// produces:
+UrlBuilder.from("http://foo.com/with%20spaces/path/with/varArgs/&=%3F%2F;matrix=param%3F?fancy%20%2B%20name=fancy?%3Dvalue#%23?=")
+          .toUrlString());
+
+UrlBuilder.from(new URL("http://foo.com/with%20spaces/path/with/varArgs/&=%3F%2F;matrix=param%3F?fancy%20%2B%20name=fancy?%3Dvalue#%23?="))
+          .toUrlString());
+
+// all above examples produce:
 // http://foo.com/with%20spaces/path/with/varArgs/&=%3F%2F;matrix=param%3F?fancy%20%2B%20name=fancy?%3Dvalue#%23?=
 ```
 

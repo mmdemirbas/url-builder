@@ -28,8 +28,8 @@ class UrlBuilder {
                  fun setQuery   (unstructuredQuery : String                               ) = apply { this.query    = Query.Unstructured(unstructuredQuery)     }
                  fun setFragment(fragment          : String?                              ) = apply { this.fragment = fragment                                  }
 
-    fun buildUrlString() = buildUrl().toUrlString()
-    fun buildUrl() = Url(scheme, host, port, path, query, fragment)
+    fun toUrlString() = toUrl().toUrlString()
+    fun toUrl() = Url(scheme, host, port, path, query, fragment)
 
     companion object {
         @JvmStatic
@@ -39,6 +39,7 @@ class UrlBuilder {
         @JvmStatic
         fun from(url: URL, charset: Charset = Charsets.UTF_8) = from(url.toUrl(charset))
 
+        @JvmOverloads
         @JvmStatic
         fun from(url: String, charset: Charset = Charsets.UTF_8) = from(url.toUrl(charset))
 
