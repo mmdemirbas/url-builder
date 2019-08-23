@@ -1,7 +1,8 @@
 *.iml
-.DS_Store
+*.log
 .gradle
-.idea
-build
-target
-out
+/.*/
+build/
+hs_err_pid*
+out/
+target/
